@@ -63,6 +63,17 @@ class G4NuclearDecay : public G4VDecayChannel
 
     virtual void DumpNuclearInfo() = 0;
 
+    //function for reading width-files for decays that have widths
+    G4bool ReadWidthFile(G4int daughterZ, G4int daughterA, G4double nominalDaughterEx, G4double nominalQvalue);
+
+    //data for the width files are stored in vectors
+    std::vector<G4double> sublevelBRs;
+    std::vector<G4double> sublevelExs;
+    std::vector<G4double> sublevelQvalues;
+
+    //bool to check if width file has been succesfully read
+    G4bool widthReadSucces;
+
   protected:
     const G4RadioactiveDecayMode theMode;
 

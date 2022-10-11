@@ -56,6 +56,19 @@ G4NeutronWidthDecay::G4NeutronWidthDecay(const G4ParticleDefinition* theParentNu
             (G4IonTable*)(G4ParticleTable::GetParticleTable()->GetIonTable());
     G4int daughterZ = theParentNucleus->GetAtomicNumber();
     G4int daughterA = theParentNucleus->GetAtomicMass() - 1;
+
+    widthReadSucces = ReadWidthFile(daughterZ,daughterA,excitationE*MeV, transitionQ*MeV);
+    if(widthReadSucces){
+        G4cout << sublevelExs.size() << G4endl;
+        for(int i = 0; i < sublevelExs.size(); i++){
+            G4cout << "My Q: " << sublevelQvalues[i] << " theirs: " << transitionQ << G4endl;
+            G4cout << "Sublevel: " << sublevelExs[i] << " sublevelBR: " << sublevelBRs[i] << G4endl;
+        }
+    }
+    else{
+        G4cout << "Ikke læst" << G4endl;
+    }
+
     SetDaughter(0, theIonTable->GetIon(daughterZ, daughterA, excitationE, flb) );
     SetDaughter(1, "neutron");
 }
