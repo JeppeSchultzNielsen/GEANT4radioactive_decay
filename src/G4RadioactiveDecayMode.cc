@@ -66,6 +66,8 @@ std::istream &operator >> (std::istream& strm, G4RadioactiveDecayMode& q)
     {q = Neutron2;}
   else if (a == "Triton")
     {q = Triton;}
+  else if (a == "NeutronWidth")
+    {q = NeutronWidth;}
   else
     {q = RDM_ERROR;}
   return strm;

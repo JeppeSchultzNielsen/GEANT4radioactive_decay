@@ -23,57 +23,39 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-#ifndef G4RadioactiveDecayMode_h
-#define G4RadioactiveDecayMode_h 1
-// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-//
-// MODULE:              RadioactiveDecayMode.hh
-//
-// Version:             0.b.4
-// Date:                14/04/00
-// Author:              F Lei & P R Truscott
-// Organisation:        DERA UK
-// Customer:            ESA/ESTEC, NOORDWIJK
-// Contract:            12115/96/JG/NL Work Order No. 3
-//
-// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-//
-// DESCRIPTION
-// -----------
-//
-// Identifies a type G4RadioactiveDecayMode to assign a specific decay mode
-// description to decay channels.
-//
-// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-//
-// CHANGE HISTORY
-// --------------
-//
-// 29 February 2000, P R Truscott, DERA UK
-// 0.b.3 release.
-//
-// 13 April 2000, F Lei, DERA UK
-// 0.b.4 release. No change to this file
-//
-// 13 October 2015 L.G Sarmiento included different decay modes in the enum
-//
-// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ////////////////////////////////////////////////////////////////////////////////
-//
-#include "globals.hh"
+//                                                                            //
+//  File:   G4NeutronWidthDecay.hh                                            //
+//  Author: Jeppe Schultz Nielsen (AU                                         //
+//  Date:   10 October 2022                                                   //
+//  Description: performs protom emission from radioactive nuclei, and        //
+//               returns daughter particles in rest frame of parent nucleus   //
+//                                                                            //
+//               This class is created based on G4AlphaDecay                  //
+//                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
-//
-enum G4RadioactiveDecayMode {
-  RDM_ERROR=-1, IT=0, BetaMinus=1, BetaPlus=2, 
-  KshellEC=3, LshellEC=4, MshellEC=5, NshellEC=6, 
-  Alpha=7, Proton=8, Neutron=9, SpFission=10,
-  BDProton=11, BDNeutron=12, Beta2Minus=13, Beta2Plus=14, 
-  Proton2=15, Neutron2=16, Triton=17, NeutronWidth = 18,
-  G4RadioactiveDecayModeSize  // Note: the value G4RadioactiveDecayModeSize must remain the last one!
-}; 
 
-std::istream &operator >> (std::istream &s, G4RadioactiveDecayMode &q);
+#ifndef G4NeutronWidthDecay_h
+#define G4NeutronWidthDecay_h 1
 
-////////////////////////////////////////////////////////////////////////////////
+#include "G4NuclearDecay.hh"
+
+
+class G4NeutronWidthDecay : public G4NuclearDecay
+{
+public:
+    G4NeutronWidthDecay(const G4ParticleDefinition* theParentNucleus,
+                   const G4double& theBR, const G4double& Qvalue,
+                   const G4double& excitation, const G4Ions::G4FloatLevelBase& flb);
+
+    virtual ~G4NeutronWidthDecay();
+
+    virtual G4DecayProducts* DecayIt(G4double);
+
+    virtual void DumpNuclearInfo();
+
+private:
+    const G4double transitionQ;
+};
 #endif
 

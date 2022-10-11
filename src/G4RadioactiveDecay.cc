@@ -74,6 +74,8 @@
 #include "G4Alpha.hh"
 #include "G4Triton.hh"
 #include "G4Proton.hh"
+#include "G4NeutronWidthDecay.hh"
+#include "G4NeutronWidthDecay.cc"
 
 #include "G4HadronicProcessType.hh"
 #include "G4HadronicProcessStore.hh"
@@ -520,7 +522,6 @@ G4RadioactiveDecay::LoadDecayTable(const G4ParticleDefinition& theParentNucleus)
   // file containing radioactive decay data.
   G4int A = ((const G4Ions*)(&theParentNucleus))->GetAtomicMass();
   G4int Z = ((const G4Ions*)(&theParentNucleus))->GetAtomicNumber();
-
   G4double levelEnergy = ((const G4Ions*)(&theParentNucleus))->GetExcitationEnergy();
   G4Ions::G4FloatLevelBase floatingLevel =
     ((const G4Ions*)(&theParentNucleus))->GetFloatLevelBase();
@@ -666,6 +667,8 @@ G4RadioactiveDecay::LoadDecayTable(const G4ParticleDefinition& theParentNucleus)
                 /* Not yet implemented */  break;
               case Triton:
                 modeTotalBR[Triton] = decayModeTotal; break;
+              case NeutronWidth:
+                modeTotalBR[NeutronWidth] = decayModeTotal; break;
               case RDM_ERROR:
 
               default:
@@ -851,6 +854,16 @@ G4RadioactiveDecay::LoadDecayTable(const G4ParticleDefinition& theParentNucleus)
                     //                anAlphaChannel->SetHLThreshold(halflifethreshold);
                     theDecayTable->Insert(aTritonChannel);
                     modeSumBR[Triton] += b;
+                }
+              break;
+
+              case NeutronWidth:
+                {
+                    G4NeutronWidthDecay* aNeutronWidthChannel =
+                            new G4NeutronWidthDecay(&theParentNucleus, b, c*MeV, a*MeV,
+                                               daughterFloatLevel);
+                  theDecayTable->Insert(aNeutronWidthChannel);
+                  modeSumBR[NeutronWidth] += b;
                 }
               break;
 
