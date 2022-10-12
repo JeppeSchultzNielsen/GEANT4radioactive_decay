@@ -34,6 +34,7 @@
 #include "G4NuclearDecay.hh"
 #include "G4SystemOfUnits.hh"
 #include <fstream>
+#include "Randomize.hh"
 
 G4NuclearDecay::G4NuclearDecay(const G4String& channelName,
                                const G4RadioactiveDecayMode& aMode,
@@ -46,11 +47,28 @@ G4NuclearDecay::G4NuclearDecay(const G4String& channelName,
 G4NuclearDecay::~G4NuclearDecay()
 {}
 
+G4int G4NuclearDecay::ChooseDecaySublevel(){
+    //in case probability distribution is not properly normalized
+    double probRoof = probabilitySum * G4UniformRand();
+    double probSum = 0;
+
+    //finding by weighted average. Can be optimized by look-up in binary tree somehow?
+    for(int i = 0; i < sublevelBRs.size(); i++){
+        probSum += sublevelBRs[i];
+        if(probSum > probRoof){
+            return i;
+        }
+    }
+    //error has occured, as probSum never crossed probSum (should be impossible)
+    return -1;
+}
+
 G4bool G4NuclearDecay::ReadWidthFile(G4int daughterZ, G4int daughterA, G4double nominalDaughterEx, G4double nominalQvalue){
     //initialize vectors for storing output
     sublevelBRs = {};
     sublevelExs = {};
     sublevelQvalues = {};
+    probabilitySum = 0;
 
     //nominalDaughterEx is apparently in MeV; i need it in keV:
     nominalDaughterEx = 1000 * nominalDaughterEx;
@@ -92,9 +110,6 @@ G4bool G4NuclearDecay::ReadWidthFile(G4int daughterZ, G4int daughterA, G4double 
                 //else
                 else{
                     tmpStream >> dump >> nominalRead;
-                    G4cout << nominalRead << G4endl;
-                    G4cout << nominalDaughterEx << G4endl;
-                    G4cout << abs(nominalRead-nominalDaughterEx) << G4endl;
                     if(abs(nominalRead-nominalDaughterEx) < 0.01){
                         //if the read nominallevel is less than 10eV from the daughterlevel, we consider it found.
                         found = true;
@@ -108,9 +123,13 @@ G4bool G4NuclearDecay::ReadWidthFile(G4int daughterZ, G4int daughterA, G4double 
                     tmpStream >> sublevel >> sublevelBR;
                     sublevelExs.push_back(sublevel);
                     sublevelBRs.push_back(sublevelBR);
+                    probabilitySum += sublevelBR;
                     //Q-value of decay to the sublevel is the nominal Q-value minus the relative excitation of the
-                    //sublevel
+                    //sublevelnominalQvalue*1000
                     sublevelQvalues.push_back((nominalQvalue*1000 - (sublevel - nominalDaughterEx))/1000);
+                    /*G4cout << "nominalQ*1000 "<< nominalQvalue*1000 << G4endl;
+                    G4cout << "(sublevel - nominalDaughterEx))/1000 " << (sublevel - nominalDaughterEx)/1000 << G4endl;
+                    G4cout << "result "<< (nominalQvalue*1000 - (sublevel - nominalDaughterEx))/1000 << G4endl;*/
                 }
             }
         }

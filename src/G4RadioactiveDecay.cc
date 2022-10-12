@@ -75,7 +75,7 @@
 #include "G4Triton.hh"
 #include "G4Proton.hh"
 #include "G4NeutronWidthDecay.hh"
-#include "G4NeutronWidthDecay.cc"
+//#include "G4NeutronWidthDecay.cc"
 
 #include "G4HadronicProcessType.hh"
 #include "G4HadronicProcessStore.hh"

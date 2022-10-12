@@ -66,10 +66,20 @@ class G4NuclearDecay : public G4VDecayChannel
     //function for reading width-files for decays that have widths
     G4bool ReadWidthFile(G4int daughterZ, G4int daughterA, G4double nominalDaughterEx, G4double nominalQvalue);
 
+    G4int ChooseDecaySublevel();
+
+    //needed if SetDaughter should be in DecayIt:
+    G4Ions::G4FloatLevelBase nominalFlb;
+    G4double nominalExcitation;
+    G4int daughterZ;
+    G4int daughterA;
+    G4IonTable* theIonTable;
+
     //data for the width files are stored in vectors
     std::vector<G4double> sublevelBRs;
     std::vector<G4double> sublevelExs;
     std::vector<G4double> sublevelQvalues;
+    G4double probabilitySum;
 
     //bool to check if width file has been succesfully read
     G4bool widthReadSucces;
