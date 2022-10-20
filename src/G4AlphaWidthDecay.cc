@@ -31,7 +31,7 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "G4NeutronWidthDecay.hh"
+#include "G4AlphaWidthDecay.hh"
 #include "G4IonTable.hh"
 #include "Randomize.hh"
 #include "G4ThreeVector.hh"
@@ -42,34 +42,30 @@
 #include <iostream>
 #include <iomanip>
 
-G4NeutronWidthDecay::G4NeutronWidthDecay(const G4ParticleDefinition* theParentNucleus,
-                               const G4double& branch, const G4double& Qvalue,
-                               const G4double& excitationE,
-                               const G4Ions::G4FloatLevelBase& flb)
- : G4NuclearDecay("neutron decay", NeutronWidth, excitationE, flb), transitionQ(Qvalue)
+G4AlphaWidthDecay::G4AlphaWidthDecay(const G4ParticleDefinition* theParentNucleus,
+                                         const G4double& branch, const G4double& Qvalue,
+                                         const G4double& excitationE,
+                                         const G4Ions::G4FloatLevelBase& flb)
+        : G4NuclearDecay("alpha decay", AlphaWidth, excitationE, flb), transitionQ(Qvalue)
 {
     SetParent(theParentNucleus);  // Store name of parent nucleus, delete G4MT_parent
     SetBR(branch);
 
     SetNumberOfDaughters(2);
     theIonTable = (G4IonTable*)(G4ParticleTable::GetParticleTable()->GetIonTable());
-    daughterZ = theParentNucleus->GetAtomicNumber();
-    daughterA = theParentNucleus->GetAtomicMass() - 1;
+    daughterZ = theParentNucleus->GetAtomicNumber()-2;
+    daughterA = theParentNucleus->GetAtomicMass() - 4;
     nominalExcitation = excitationE;
     nominalFlb = flb;
-
-    //SetDaughter(0, theIonTable->GetIon(daughterZ, daughterA, nominalExcitation, nominalFlb) );
-    //SetDaughter(1, "neutron");
-
     widthReadSucces = ReadWidthFile(daughterZ,daughterA,excitationE*MeV, transitionQ*MeV);
 }
 
 
-G4NeutronWidthDecay::~G4NeutronWidthDecay()
+G4AlphaWidthDecay::~G4AlphaWidthDecay()
 {}
 
 
-G4DecayProducts* G4NeutronWidthDecay::DecayIt(G4double)
+G4DecayProducts* G4AlphaWidthDecay::DecayIt(G4double)
 {
     G4DecayProducts* products;
     if(widthReadSucces){
@@ -79,25 +75,25 @@ G4DecayProducts* G4NeutronWidthDecay::DecayIt(G4double)
         double sublevelQvalue = sublevelQvalues[chosenLevel];
 
         SetDaughter(0, theIonTable->GetIon(daughterZ, daughterA, sublevelExcitation, nominalFlb) );
-        SetDaughter(1, "neutron");
+        SetDaughter(1, "alpha");
 
         // Fill G4MT_parent with theParentNucleus (stored by SetParent in ctor)
         CheckAndFillParent();
 
-        // Fill G4MT_daughters with neutron and residual nucleus (stored by SetDaughter)
+        // Fill G4MT_daughters with alpha and residual nucleus (stored by SetDaughter)
         //CheckAndFillDaughters();
         CheckAndFillDaughters();
 
-        G4double neutronMass = G4MT_daughters[1]->GetPDGMass();
+        G4double alphaMass = G4MT_daughters[1]->GetPDGMass();
         // Excitation energy included in PDG mass
         G4double nucleusMass = G4MT_daughters[0]->GetPDGMass();
 
         // Q value was calculated from atomic masses.
         // Use it to get correct neutron energy.
-        G4double cmMomentum = std::sqrt(sublevelQvalue*(transitionQ + 2.*neutronMass)*
+        G4double cmMomentum = std::sqrt(sublevelQvalue*(transitionQ + 2.*alphaMass)*
                                         (sublevelQvalue + 2.*nucleusMass)*
-                                        (sublevelQvalue + 2.*neutronMass + 2.*nucleusMass) )/
-                              (sublevelQvalue + neutronMass + nucleusMass)/2.;
+                                        (sublevelQvalue + 2.*alphaMass + 2.*nucleusMass) )/
+                              (sublevelQvalue + alphaMass + nucleusMass)/2.;
 
         // Set up final state
         // parentParticle is set at rest here because boost with correct momentum
@@ -111,11 +107,11 @@ G4DecayProducts* G4NeutronWidthDecay::DecayIt(G4double)
         G4ThreeVector direction(sintheta*std::cos(phi),sintheta*std::sin(phi),
                                 costheta);
 
-        G4double KE = std::sqrt(cmMomentum*cmMomentum + neutronMass*neutronMass)
-                      - neutronMass;
+        G4double KE = std::sqrt(cmMomentum*cmMomentum + alphaMass*alphaMass)
+                      - alphaMass;
 
         G4DynamicParticle* daughterparticle =
-                new G4DynamicParticle(G4MT_daughters[1], direction, KE, neutronMass);
+                new G4DynamicParticle(G4MT_daughters[1], direction, KE, alphaMass);
         products->PushProducts(daughterparticle);
 
         KE = std::sqrt(cmMomentum*cmMomentum + nucleusMass*nucleusMass) - nucleusMass;
@@ -125,7 +121,7 @@ G4DecayProducts* G4NeutronWidthDecay::DecayIt(G4double)
     }
     else{
         SetDaughter(0, theIonTable->GetIon(daughterZ, daughterA, nominalExcitation, nominalFlb) );
-        SetDaughter(1, "neutron");
+        SetDaughter(1, "alpha");
 
         // Fill G4MT_parent with theParentNucleus (stored by SetParent in ctor)
         CheckAndFillParent();
@@ -133,16 +129,16 @@ G4DecayProducts* G4NeutronWidthDecay::DecayIt(G4double)
         // Fill G4MT_daughters with neutron and residual nucleus (stored by SetDaughter)
         CheckAndFillDaughters();
 
-        G4double neutronMass = G4MT_daughters[1]->GetPDGMass();
+        G4double alphaMass = G4MT_daughters[1]->GetPDGMass();
         // Excitation energy included in PDG mass
         G4double nucleusMass = G4MT_daughters[0]->GetPDGMass();
 
         // Q value was calculated from atomic masses.
         // Use it to get correct neutron energy.
-        G4double cmMomentum = std::sqrt(transitionQ*(transitionQ + 2.*neutronMass)*
+        G4double cmMomentum = std::sqrt(transitionQ*(transitionQ + 2.*alphaMass)*
                                         (transitionQ + 2.*nucleusMass)*
-                                        (transitionQ + 2.*neutronMass + 2.*nucleusMass) )/
-                              (transitionQ + neutronMass + nucleusMass)/2.;
+                                        (transitionQ + 2.*alphaMass + 2.*nucleusMass) )/
+                              (transitionQ + alphaMass + nucleusMass)/2.;
 
         // Set up final state
         // parentParticle is set at rest here because boost with correct momentum
@@ -155,10 +151,10 @@ G4DecayProducts* G4NeutronWidthDecay::DecayIt(G4double)
         G4ThreeVector direction(sintheta*std::cos(phi),sintheta*std::sin(phi),
                                 costheta);
 
-        G4double KE = std::sqrt(cmMomentum*cmMomentum + neutronMass*neutronMass)
-                      - neutronMass;
+        G4double KE = std::sqrt(cmMomentum*cmMomentum + alphaMass*alphaMass)
+                      - alphaMass;
         G4DynamicParticle* daughterparticle =
-                new G4DynamicParticle(G4MT_daughters[1], direction, KE, neutronMass);
+                new G4DynamicParticle(G4MT_daughters[1], direction, KE, alphaMass);
         products->PushProducts(daughterparticle);
 
         KE = std::sqrt(cmMomentum*cmMomentum + nucleusMass*nucleusMass) - nucleusMass;
@@ -170,9 +166,9 @@ G4DecayProducts* G4NeutronWidthDecay::DecayIt(G4double)
 }
 
 
-void G4NeutronWidthDecay::DumpNuclearInfo()
+void G4AlphaWidthDecay::DumpNuclearInfo()
 {
-    G4cout << " G4NeutronDecay for parent nucleus " << GetParentName() << G4endl;
+    G4cout << " G4AlphaDecay for parent nucleus " << GetParentName() << G4endl;
     G4cout << " decays to " << GetDaughterName(0) << " + " << GetDaughterName(1)
            << " with branching ratio " << GetBR() << "% and Q value "
            << transitionQ << G4endl;

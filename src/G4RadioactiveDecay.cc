@@ -75,7 +75,9 @@
 #include "G4Triton.hh"
 #include "G4Proton.hh"
 #include "G4NeutronWidthDecay.hh"
-//#include "G4NeutronWidthDecay.cc"
+#include "G4TritonWidthDecay.hh"
+#include "G4AlphaWidthDecay.hh"
+#include "G4BetaMinusWidthDecay.hh"
 
 #include "G4HadronicProcessType.hh"
 #include "G4HadronicProcessStore.hh"
@@ -621,7 +623,7 @@ G4RadioactiveDecay::LoadDecayTable(const G4ParticleDefinition& theParentNucleus)
 
           // Store for later the total decay probability for each decay mode 
           if (inputLine.length() < 72) {
-            tmpStream >> theDecayMode >> dummy >> decayModeTotal;
+              tmpStream >> theDecayMode >> dummy >> decayModeTotal;
             switch (theDecayMode) {
               case IT:
                 {
@@ -669,6 +671,12 @@ G4RadioactiveDecay::LoadDecayTable(const G4ParticleDefinition& theParentNucleus)
                 modeTotalBR[Triton] = decayModeTotal; break;
               case NeutronWidth:
                 modeTotalBR[NeutronWidth] = decayModeTotal; break;
+              case TritonWidth:
+                modeTotalBR[TritonWidth] = decayModeTotal; break;
+              case AlphaWidth:
+                modeTotalBR[AlphaWidth] = decayModeTotal; break;
+              case BetaMinusWidth:
+                modeTotalBR[BetaMinusWidth] = decayModeTotal; break;
               case RDM_ERROR:
 
               default:
@@ -866,6 +874,38 @@ G4RadioactiveDecay::LoadDecayTable(const G4ParticleDefinition& theParentNucleus)
                   modeSumBR[NeutronWidth] += b;
                 }
               break;
+
+                case TritonWidth:
+                {
+                    G4TritonWidthDecay* aTritonWidthChannel =
+                            new G4TritonWidthDecay(&theParentNucleus, b, c*MeV, a*MeV,
+                                                    daughterFloatLevel);
+                    theDecayTable->Insert(aTritonWidthChannel);
+                    modeSumBR[TritonWidth] += b;
+                }
+                    break;
+
+                case AlphaWidth:
+                {
+                    G4AlphaWidthDecay* aAlphaWidthChannel =
+                            new G4AlphaWidthDecay(&theParentNucleus, b, c*MeV, a*MeV,
+                                                    daughterFloatLevel);
+                    theDecayTable->Insert(aAlphaWidthChannel);
+                    modeSumBR[AlphaWidth] += b;
+                }
+                    break;
+
+                case BetaMinusWidth:
+                {
+                    G4BetaMinusWidthDecay* aBetaMinusWidthChannel =
+                            new G4BetaMinusWidthDecay(&theParentNucleus, b, c*MeV, a*MeV,
+                                                 daughterFloatLevel, betaType);
+//              aBetaMinusChannel->DumpNuclearInfo();
+//                aBetaMinusChannel->SetHLThreshold(halflifethreshold);
+                    theDecayTable->Insert(aBetaMinusWidthChannel);
+                    modeSumBR[BetaMinusWidth] += b;
+                }
+                    break;
 
               case RDM_ERROR:
 
@@ -1234,6 +1274,8 @@ void G4RadioactiveDecay::DecayAnalog(const G4Track& theTrack)
 G4DecayProducts*
 G4RadioactiveDecay::DoDecay(const G4ParticleDefinition& theParticleDef)
 {
+
+
   G4DecayProducts* products = 0;
   G4DecayTable* theDecayTable = GetDecayTable(&theParticleDef);
 

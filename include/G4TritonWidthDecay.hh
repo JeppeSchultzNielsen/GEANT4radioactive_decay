@@ -23,59 +23,39 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+//  File:   G4TritonWidthDecay.hh                                            //
+//  Author: Jeppe Schultz Nielsen (AU                                         //
+//  Date:   10 October 2022                                                   //
+//  Description: performs protom emission from radioactive nuclei, and        //
+//               returns daughter particles in rest frame of parent nucleus   //
+//                                                                            //
+//               This class is created based on G4AlphaDecay                  //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
 
-#include "G4RadioactiveDecayMode.hh"
+#ifndef G4TritonWidthDecay_h
+#define G4TritonWidthDecay_h 1
 
-std::istream &operator >> (std::istream& strm, G4RadioactiveDecayMode& q)
+#include "G4NuclearDecay.hh"
+
+
+class G4TritonWidthDecay : public G4NuclearDecay
 {
-  G4String a;
-  strm >> a;
-  if (a == "IT")
-    {q = IT;}
-  else if (a == "BetaMinus")
-    {q = BetaMinus;}
-  else if (a == "BetaPlus")
-    {q = BetaPlus;}
-  else if (a == "KshellEC")
-    {q = KshellEC;}
-  else if (a == "LshellEC")
-    {q = LshellEC;}
-  else if (a == "MshellEC")
-    {q = MshellEC;}
-  else if (a == "NshellEC")
-      {q = NshellEC;}
-  else if (a == "Alpha")
-    {q = Alpha;}
-  else if (a == "Proton")
-    {q = Proton;}
-  else if (a == "Neutron")
-    {q = Neutron;}
-  else if (a == "SpFission")
-    {q = SpFission;}
-  else if (a == "BDProton")
-    {q = BDProton;}
-  else if (a == "BDNeutron")
-    {q = BDNeutron;}
-  else if (a == "Beta2Minus")
-    {q = Beta2Minus;}
-  else if (a == "Beta2Plus")
-    {q = Beta2Plus;}
-  else if (a == "Proton2")
-    {q = Proton2;}
-  else if (a == "Neutron2")
-    {q = Neutron2;}
-  else if (a == "Triton")
-    {q = Triton;}
-  else if (a == "NeutronWidth")
-    {q = NeutronWidth;}
-  else if (a == "AlphaWidth")
-  {q = AlphaWidth;}
-  else if (a == "TritonWidth")
-  {q = TritonWidth;}
-  else if (a == "BetaMinusWidth")
-  {q = BetaMinusWidth;}
-  else
-    {q = RDM_ERROR;}
-  return strm;
-}
+public:
+    G4TritonWidthDecay(const G4ParticleDefinition* theParentNucleus,
+                        const G4double& theBR, const G4double& Qvalue,
+                        const G4double& excitation, const G4Ions::G4FloatLevelBase& flb);
+
+    virtual ~G4TritonWidthDecay();
+
+    virtual G4DecayProducts* DecayIt(G4double);
+
+    virtual void DumpNuclearInfo();
+
+private:
+    const G4double transitionQ;
+};
+#endif
 

@@ -120,6 +120,12 @@ G4bool G4NuclearDecay::ReadWidthFile(G4int daughterZ, G4int daughterA, G4double 
                 //when the line does not start with N, we are reading sublevels and sublevelBRs. If the nominalLevel is
                 //found, these should be loaded into the vectors.
                 if(found){
+                    //if Q value is less than 0, sharply set BR to 0 - this should be implemented in a smoother way
+                    //later
+                    if((nominalQvalue*1000 - (sublevel - nominalDaughterEx))/1000 < 0){
+                        sublevelBR = 0;
+                    }
+
                     tmpStream >> sublevel >> sublevelBR;
                     sublevelExs.push_back(sublevel);
                     sublevelBRs.push_back(sublevelBR);
@@ -127,9 +133,6 @@ G4bool G4NuclearDecay::ReadWidthFile(G4int daughterZ, G4int daughterA, G4double 
                     //Q-value of decay to the sublevel is the nominal Q-value minus the relative excitation of the
                     //sublevelnominalQvalue*1000
                     sublevelQvalues.push_back((nominalQvalue*1000 - (sublevel - nominalDaughterEx))/1000);
-                    /*G4cout << "nominalQ*1000 "<< nominalQvalue*1000 << G4endl;
-                    G4cout << "(sublevel - nominalDaughterEx))/1000 " << (sublevel - nominalDaughterEx)/1000 << G4endl;
-                    G4cout << "result "<< (nominalQvalue*1000 - (sublevel - nominalDaughterEx))/1000 << G4endl;*/
                 }
             }
         }
