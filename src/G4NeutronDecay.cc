@@ -98,12 +98,15 @@ G4DecayProducts* G4NeutronDecay::DecayIt(G4double)
 
   G4double KE = std::sqrt(cmMomentum*cmMomentum + neutronMass*neutronMass)
               - neutronMass;
+    /*G4cout << "Decay from " << G4MT_parent -> GetParticleName() <<  " with Q " << transitionQ << G4endl;
+    G4cout << "To neutron" << "with " << KE << G4endl;*/
   G4DynamicParticle* daughterparticle =
     new G4DynamicParticle(G4MT_daughters[1], direction, KE, neutronMass);
   products->PushProducts(daughterparticle);
 
   KE = std::sqrt(cmMomentum*cmMomentum + nucleusMass*nucleusMass) - nucleusMass;
-  daughterparticle =
+    //G4cout << "And " << G4MT_daughters[0]->GetParticleName() << " with " << KE << G4endl;
+    daughterparticle =
     new G4DynamicParticle(G4MT_daughters[0], -1.0*direction, KE, nucleusMass);
   products->PushProducts(daughterparticle);
 

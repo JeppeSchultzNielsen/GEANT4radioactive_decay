@@ -90,7 +90,7 @@ G4DecayProducts* G4AlphaWidthDecay::DecayIt(G4double)
 
         // Q value was calculated from atomic masses.
         // Use it to get correct neutron energy.
-        G4double cmMomentum = std::sqrt(sublevelQvalue*(transitionQ + 2.*alphaMass)*
+        G4double cmMomentum = std::sqrt(sublevelQvalue*(sublevelQvalue + 2.*alphaMass)*
                                         (sublevelQvalue + 2.*nucleusMass)*
                                         (sublevelQvalue + 2.*alphaMass + 2.*nucleusMass) )/
                               (sublevelQvalue + alphaMass + nucleusMass)/2.;
@@ -110,11 +110,15 @@ G4DecayProducts* G4AlphaWidthDecay::DecayIt(G4double)
         G4double KE = std::sqrt(cmMomentum*cmMomentum + alphaMass*alphaMass)
                       - alphaMass;
 
+        /*G4cout << "Decay from " << G4MT_parent -> GetParticleName() << G4endl;
+        G4cout << "To alpha" << "with " << KE << G4endl;*/
+
         G4DynamicParticle* daughterparticle =
                 new G4DynamicParticle(G4MT_daughters[1], direction, KE, alphaMass);
         products->PushProducts(daughterparticle);
 
         KE = std::sqrt(cmMomentum*cmMomentum + nucleusMass*nucleusMass) - nucleusMass;
+        //G4cout << "And " << G4MT_daughters[0]->GetParticleName() << " with " << KE << G4endl;
         daughterparticle =
                 new G4DynamicParticle(G4MT_daughters[0], -1.0*direction, KE, nucleusMass);
         products->PushProducts(daughterparticle);

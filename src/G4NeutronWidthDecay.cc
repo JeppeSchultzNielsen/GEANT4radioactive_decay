@@ -94,7 +94,7 @@ G4DecayProducts* G4NeutronWidthDecay::DecayIt(G4double)
 
         // Q value was calculated from atomic masses.
         // Use it to get correct neutron energy.
-        G4double cmMomentum = std::sqrt(sublevelQvalue*(transitionQ + 2.*neutronMass)*
+        G4double cmMomentum = std::sqrt(sublevelQvalue*(sublevelQvalue + 2.*neutronMass)*
                                         (sublevelQvalue + 2.*nucleusMass)*
                                         (sublevelQvalue + 2.*neutronMass + 2.*nucleusMass) )/
                               (sublevelQvalue + neutronMass + nucleusMass)/2.;
@@ -114,11 +114,17 @@ G4DecayProducts* G4NeutronWidthDecay::DecayIt(G4double)
         G4double KE = std::sqrt(cmMomentum*cmMomentum + neutronMass*neutronMass)
                       - neutronMass;
 
+        /*G4cout << "Decay from " << G4MT_parent -> GetParticleName() << " with Q " << sublevelQvalue << G4endl;
+        G4cout << "To neutron" << "with " << KE << G4endl;*/
+
         G4DynamicParticle* daughterparticle =
                 new G4DynamicParticle(G4MT_daughters[1], direction, KE, neutronMass);
         products->PushProducts(daughterparticle);
 
-        KE = std::sqrt(cmMomentum*cmMomentum + nucleusMass*nucleusMass) - nucleusMass;
+        //KE = std::sqrt(cmMomentum*cmMomentum + nucleusMass*nucleusMass) - nucleusMass;
+
+        G4cout << "And " << G4MT_daughters[0]->GetParticleName() << " with " << KE << G4endl;
+
         daughterparticle =
                 new G4DynamicParticle(G4MT_daughters[0], -1.0*direction, KE, nucleusMass);
         products->PushProducts(daughterparticle);
@@ -157,11 +163,16 @@ G4DecayProducts* G4NeutronWidthDecay::DecayIt(G4double)
 
         G4double KE = std::sqrt(cmMomentum*cmMomentum + neutronMass*neutronMass)
                       - neutronMass;
+
+        /*G4cout << "Decay from " << G4MT_parent -> GetParticleName() <<  " with Q " << transitionQ <<G4endl;
+        G4cout << "To neutron" << "with " << KE << G4endl;*/
+
         G4DynamicParticle* daughterparticle =
                 new G4DynamicParticle(G4MT_daughters[1], direction, KE, neutronMass);
         products->PushProducts(daughterparticle);
 
         KE = std::sqrt(cmMomentum*cmMomentum + nucleusMass*nucleusMass) - nucleusMass;
+        //G4cout << "And " << G4MT_daughters[0]->GetParticleName() << " with " << KE << G4endl;
         daughterparticle =
                 new G4DynamicParticle(G4MT_daughters[0], -1.0*direction, KE, nucleusMass);
         products->PushProducts(daughterparticle);
