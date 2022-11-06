@@ -41,6 +41,7 @@
 #include "G4SystemOfUnits.hh"
 #include <iostream>
 #include <iomanip>
+#include "G4Ions.hh"
 
 G4NeutronWidthDecay::G4NeutronWidthDecay(const G4ParticleDefinition* theParentNucleus,
                                const G4double& branch, const G4double& Qvalue,
@@ -50,7 +51,6 @@ G4NeutronWidthDecay::G4NeutronWidthDecay(const G4ParticleDefinition* theParentNu
 {
     SetParent(theParentNucleus);  // Store name of parent nucleus, delete G4MT_parent
     SetBR(branch);
-
     SetNumberOfDaughters(2);
     theIonTable = (G4IonTable*)(G4ParticleTable::GetParticleTable()->GetIonTable());
     daughterZ = theParentNucleus->GetAtomicNumber();
@@ -74,11 +74,10 @@ G4DecayProducts* G4NeutronWidthDecay::DecayIt(G4double)
     G4DecayProducts* products;
     if(widthReadSucces){
         int chosenLevel = ChooseDecaySublevel();
-
         double sublevelExcitation = sublevelExs[chosenLevel]/1000;
         double sublevelQvalue = sublevelQvalues[chosenLevel];
 
-        SetDaughter(0, theIonTable->GetIon(daughterZ, daughterA, sublevelExcitation, nominalFlb) );
+        SetDaughter(0, theIonTable->GetIon(daughterZ, daughterA, sublevelExcitation, nominalFlb, nominalExcitation) );
         SetDaughter(1, "neutron");
 
         // Fill G4MT_parent with theParentNucleus (stored by SetParent in ctor)
@@ -111,6 +110,7 @@ G4DecayProducts* G4NeutronWidthDecay::DecayIt(G4double)
         G4ThreeVector direction(sintheta*std::cos(phi),sintheta*std::sin(phi),
                                 costheta);
 
+
         G4double KE = std::sqrt(cmMomentum*cmMomentum + neutronMass*neutronMass)
                       - neutronMass;
 
@@ -142,6 +142,17 @@ G4DecayProducts* G4NeutronWidthDecay::DecayIt(G4double)
         G4double neutronMass = G4MT_daughters[1]->GetPDGMass();
         // Excitation energy included in PDG mass
         G4double nucleusMass = G4MT_daughters[0]->GetPDGMass();
+
+        /*G4double Li8mass = theIonTable->GetIon(3, 8, 0, nominalFlb)->GetPDGMass();
+        G4double tritonmass = theIonTable->GetIon(1, 3, 0, nominalFlb)->GetPDGMass();
+        G4double alphamass = theIonTable->GetIon(2, 4, 0, nominalFlb)->GetPDGMass();
+        G4double he5mass = theIonTable->GetIon(2, 5, 0, nominalFlb)->GetPDGMass();
+
+        G4cout << "Li8 mass" << Li8mass << G4endl;
+        G4cout << "Triton mass " << tritonmass << G4endl;
+        G4cout << "neutron mass " << neutronMass << G4endl;
+        G4cout << "Alpha mass " << alphamass << G4endl;
+        G4cout << "Mass difference " << he5mass - neutronMass - alphamass << G4endl;*/
 
         // Q value was calculated from atomic masses.
         // Use it to get correct neutron energy.

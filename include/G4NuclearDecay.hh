@@ -76,14 +76,16 @@ class G4NuclearDecay : public G4VDecayChannel
     G4IonTable* theIonTable;
 
     //data for the width files are stored in vectors
-    std::vector<G4double> sublevelBRs;
+    std::vector<G4double> sublevelCumBRs;
     std::vector<G4double> sublevelExs;
     std::vector<G4double> sublevelQvalues;
+    std::vector<G4double> sublevelBRs;
     G4double probabilitySum;
 
     //bool to check if width file has been succesfully read
     G4bool widthReadSucces;
 
+    G4int BinarySearch(std::vector<G4double> *cumProbs, G4double x, G4int low, G4int high);
   protected:
     const G4RadioactiveDecayMode theMode;
 

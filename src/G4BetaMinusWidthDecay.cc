@@ -83,7 +83,7 @@ G4DecayProducts* G4BetaMinusWidthDecay::DecayIt(G4double)
         double sublevelQvalue = sublevelQvalues[chosenLevel];
 
 
-        SetDaughter(0, theIonTable->GetIon(daughterZ, daughterA, sublevelExcitation, nominalFlb) );
+        SetDaughter(0, theIonTable->GetIon(daughterZ, daughterA, sublevelExcitation, nominalFlb, nominalExcitation) );
         SetDaughter(1, "e-");
         SetDaughter(2, "anti_nu_e");
 
@@ -152,7 +152,8 @@ G4DecayProducts* G4BetaMinusWidthDecay::DecayIt(G4double)
         G4cout << "Neutrino energy:" << nuEnergy << G4endl;
         G4cout << "Ex. energy: " << theIonTable->GetIon(daughterZ, daughterA, sublevelExcitation, nominalFlb)->GetParticleName() << G4endl;
         G4cout << "Electron energy: " << eKE << G4endl;
-        G4cout << "Sum: " << nuEnergy + eKE + sublevelExcitation << G4endl;*/
+        G4cout << "ParentionEnergy: " << dynamicDaughter -> GetKineticEnergy() << G4endl;
+        G4cout << "Sum: " << nuEnergy + eKE + sublevelExcitation + dynamicDaughter -> GetKineticEnergy() << G4endl;*/
         return products;
     }
     else{

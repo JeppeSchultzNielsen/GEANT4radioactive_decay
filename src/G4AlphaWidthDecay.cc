@@ -74,7 +74,7 @@ G4DecayProducts* G4AlphaWidthDecay::DecayIt(G4double)
         double sublevelExcitation = sublevelExs[chosenLevel]/1000;
         double sublevelQvalue = sublevelQvalues[chosenLevel];
 
-        SetDaughter(0, theIonTable->GetIon(daughterZ, daughterA, sublevelExcitation, nominalFlb) );
+        SetDaughter(0, theIonTable->GetIon(daughterZ, daughterA, sublevelExcitation, nominalFlb, nominalExcitation) );
         SetDaughter(1, "alpha");
 
         // Fill G4MT_parent with theParentNucleus (stored by SetParent in ctor)

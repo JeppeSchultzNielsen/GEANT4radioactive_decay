@@ -50,7 +50,6 @@ G4TritonWidthDecay::G4TritonWidthDecay(const G4ParticleDefinition* theParentNucl
 {
     SetParent(theParentNucleus);  // Store name of parent nucleus, delete G4MT_parent
     SetBR(branch);
-
     SetNumberOfDaughters(2);
     theIonTable = (G4IonTable*)(G4ParticleTable::GetParticleTable()->GetIonTable());
     daughterZ = theParentNucleus->GetAtomicNumber()-1;
@@ -75,7 +74,7 @@ G4DecayProducts* G4TritonWidthDecay::DecayIt(G4double)
         double sublevelExcitation = sublevelExs[chosenLevel]/1000;
         double sublevelQvalue = sublevelQvalues[chosenLevel];
 
-        SetDaughter(0, theIonTable->GetIon(daughterZ, daughterA, sublevelExcitation, nominalFlb) );
+        SetDaughter(0, theIonTable->GetIon(daughterZ, daughterA, sublevelExcitation, nominalFlb, nominalExcitation) );
         SetDaughter(1, "triton");
 
         // Fill G4MT_parent with theParentNucleus (stored by SetParent in ctor)

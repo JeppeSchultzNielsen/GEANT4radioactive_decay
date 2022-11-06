@@ -78,6 +78,7 @@
 #include "G4TritonWidthDecay.hh"
 #include "G4AlphaWidthDecay.hh"
 #include "G4BetaMinusWidthDecay.hh"
+#include "G4DalitzHandler.hh"
 
 #include "G4HadronicProcessType.hh"
 #include "G4HadronicProcessStore.hh"
@@ -126,7 +127,6 @@ G4RadioactiveDecay::G4RadioactiveDecay(const G4String& processName)
 #endif
 
   SetProcessSubType(fRadioactiveDecay);
-
   theRadioactiveDecayMessenger = new G4RadioactiveDecayMessenger(this);
   pParticleChange = &fParticleChangeForRadDecay;
 
@@ -525,6 +525,8 @@ G4RadioactiveDecay::LoadDecayTable(const G4ParticleDefinition& theParentNucleus)
   G4int A = ((const G4Ions*)(&theParentNucleus))->GetAtomicMass();
   G4int Z = ((const G4Ions*)(&theParentNucleus))->GetAtomicNumber();
   G4double levelEnergy = ((const G4Ions*)(&theParentNucleus))->GetExcitationEnergy();
+    G4cout << "Parent excitation: " << ((const G4Ions*)(&theParentNucleus))->GetExcitationEnergy() << G4endl;
+    G4cout << "Parent nomexcitation: " << ((const G4Ions*)(&theParentNucleus))-> GetNominalExcitationEnergy() << G4endl;
   G4Ions::G4FloatLevelBase floatingLevel =
     ((const G4Ions*)(&theParentNucleus))->GetFloatLevelBase();
 

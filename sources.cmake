@@ -31,6 +31,7 @@ geant4_add_module(G4hadronic_radioactivedecay
         G4AlphaWidthDecay.hh
         G4TritonWidthDecay.hh
         G4BetaMinusWidthDecay.hh
+        G4DalitzHandler.hh
   SOURCES
     G4AlphaDecay.cc
     G4BatemanParameters.cc
@@ -58,7 +59,8 @@ geant4_add_module(G4hadronic_radioactivedecay
     G4NeutronWidthDecay.cc
         G4AlphaWidthDecay.cc
         G4TritonWidthDecay.cc
-        G4BetaMinusWidthDecay.cc)
+        G4BetaMinusWidthDecay.cc
+        G4DalitzHandler.cc)
 
 geant4_module_link_libraries(G4hadronic_radioactivedecay
   PUBLIC

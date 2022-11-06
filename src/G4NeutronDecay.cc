@@ -67,7 +67,7 @@ G4NeutronDecay::~G4NeutronDecay()
 
 G4DecayProducts* G4NeutronDecay::DecayIt(G4double)
 {
-  // Fill G4MT_parent with theParentNucleus (stored by SetParent in ctor)  
+  // Fill G4MT_parent with theParentNucleus (stored by SetParent in ctor)
   CheckAndFillParent();
 
   // Fill G4MT_daughters with neutron and residual nucleus (stored by SetDaughter)  

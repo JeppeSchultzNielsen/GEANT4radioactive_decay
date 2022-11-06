@@ -47,6 +47,27 @@ G4NuclearDecay::G4NuclearDecay(const G4String& channelName,
 G4NuclearDecay::~G4NuclearDecay()
 {}
 
+//helper method for ChooseDecaySublevel and ChooseDalitzConf
+G4int G4NuclearDecay::BinarySearch(std::vector<G4double> *cumProbs, G4double x, G4int low, G4int high){
+    if(low > high){return -1;} //level was not found
+    else{
+        G4int mid = (low + high)/2;
+        if(mid == 0){
+            if(x < cumProbs->at(1)) return mid; //should have reached bottom; hopefully x is smaller than 1st entry (0th is 0)
+            else{return -1;}
+        }
+        if(low == high){ //in case we reached top
+            if(x > cumProbs->at(high) && x <= cumProbs->at(high)+1) return mid;
+            else{return -1;}
+        }
+        if(x > cumProbs->at(mid)){
+            if(x <= cumProbs->at(mid+1)) return mid; //found the level
+            else return BinarySearch(cumProbs,x,mid+1,high); //x is in upper half of the array
+        }
+        else return BinarySearch(cumProbs,x,low,mid-1); //x is in lower half of the array
+    }
+}
+
 G4int G4NuclearDecay::ChooseDecaySublevel(){
     //in case probability distribution is not properly normalized
     double probRoof = probabilitySum * G4UniformRand();
@@ -59,12 +80,17 @@ G4int G4NuclearDecay::ChooseDecaySublevel(){
             return i;
         }
     }
-    //error has occured, as probSum never crossed probSum (should be impossible)
+
+    //find by binary search.
+    //return binarySearch(&sublevelCumBRs,probRoof,0,sublevelCumBRs.size()-1);
+
+    //error has occured, as probSum never crossed probRoof (should be impossible)
     return -1;
 }
 
 G4bool G4NuclearDecay::ReadWidthFile(G4int daughterZ, G4int daughterA, G4double nominalDaughterEx, G4double nominalQvalue){
     //initialize vectors for storing output
+    sublevelCumBRs = {};
     sublevelBRs = {};
     sublevelExs = {};
     sublevelQvalues = {};
@@ -130,6 +156,7 @@ G4bool G4NuclearDecay::ReadWidthFile(G4int daughterZ, G4int daughterA, G4double 
                     sublevelExs.push_back(sublevel);
                     sublevelBRs.push_back(sublevelBR);
                     probabilitySum += sublevelBR;
+                    sublevelCumBRs.push_back(probabilitySum);
                     //Q-value of decay to the sublevel is the nominal Q-value minus the relative excitation of the
                     //sublevelnominalQvalue*1000
                     sublevelQvalues.push_back((nominalQvalue*1000 - (sublevel - nominalDaughterEx))/1000);
@@ -138,7 +165,6 @@ G4bool G4NuclearDecay::ReadWidthFile(G4int daughterZ, G4int daughterA, G4double 
         }
         //file has been read. If the nominalLevel wasnt found, return false. If it was found, it was the last level,
         //return true.
-        if(!found) return false;
-        else return true;
+        return found;
     }
 }
