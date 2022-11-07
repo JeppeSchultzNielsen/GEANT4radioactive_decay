@@ -85,7 +85,11 @@ class G4NuclearDecay : public G4VDecayChannel
     //bool to check if width file has been succesfully read
     G4bool widthReadSucces;
 
+    //helper function for chosing weighted random
     G4int BinarySearch(std::vector<G4double> *cumProbs, G4double x, G4int low, G4int high);
+
+    //helper function: triangle function. Used in 3-body decays.
+    G4double tri(G4double a, G4double b, G4double c){return (a-b-c)*(a-b-c)-4.*b*c;}
   protected:
     const G4RadioactiveDecayMode theMode;
 

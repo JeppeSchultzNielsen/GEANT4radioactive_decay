@@ -69,7 +69,7 @@ enum G4RadioactiveDecayMode {
   Alpha=7, Proton=8, Neutron=9, SpFission=10,
   BDProton=11, BDNeutron=12, Beta2Minus=13, Beta2Plus=14, 
   Proton2=15, Neutron2=16, Triton=17, NeutronWidth = 18,
-  AlphaWidth = 19, BetaMinusWidth = 20, TritonWidth = 21,
+  AlphaWidth = 19, BetaMinusWidth = 20, TritonWidth = 21, ANT = 22,
   G4RadioactiveDecayModeSize  // Note: the value G4RadioactiveDecayModeSize must remain the last one!
 }; 
 

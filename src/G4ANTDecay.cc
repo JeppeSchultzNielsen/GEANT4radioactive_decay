@@ -40,7 +40,7 @@
 G4ANTDecay::G4ANTDecay(const G4ParticleDefinition* theParentNucleus,
                              const G4double& branch, const G4double& Qvalue,
                              const G4double& excitationE,
-                             const G4Ions::G4FloatLevelBase& flb, DalitzHandler *newDalitzHandler)
+                             const G4Ions::G4FloatLevelBase& flb, G4DalitzHandler *newDalitzHandler)
         : G4NuclearDecay("ANT decay", ANT, excitationE, flb), transitionQ(Qvalue), dalitzHandler(newDalitzHandler)
 {
     SetParent(theParentNucleus);  // Store name of parent nucleus, delete G4MT_parent
@@ -66,48 +66,70 @@ G4DecayProducts* G4ANTDecay::DecayIt(G4double)
     CheckAndFillDaughters();
 
     //naming convention stems from file in which DalitzPlot was defined; 1 is neutron, 2 is triton, 3 is alpha.
-    G4double m1 = G4MT_daughters[0]->GetPDGMass();
-    G4double m2 = G4MT_daughters[1]->GetPDGMass();
-    G4double m3 = G4MT_daughters[2]->GetPDGMass();
-    G4double M = G4MT_parent -> GetPDGMass();
-    G4double M = G4MT_parent -> GetPDGMass();
+    G4double m1 = G4MT_daughters[0]->GetPDGMass() * 1000;
+    G4double m2 = G4MT_daughters[1]->GetPDGMass() * 1000;
+    G4double m3 = G4MT_daughters[2]->GetPDGMass() * 1000;
+    G4double M = G4MT_parent -> GetPDGMass() * 1000;
+    G4double nomM = dalitzHandler -> GetNomMass() * 1000;
 
-    vector<G4double> s1s2 = dalitzHandler -> GetCorrectedS1S2(M);
+    //for now, all Decays are treated like nominal decays. For this reason s3 is calculated from nominal mass.
+    std::vector<G4double> s1s2 = dalitzHandler -> GetCorrectedS1S2(M);
+    G4double s = nomM*nomM;
     G4double s1 = s1s2[0];
     G4double s2 = s1s2[1];
-    G4double s3 =
+    G4double s3 = s+ m1*m1 + m2*m2 + m3*m3 - s1 - s2;
 
-    //kinematics are fully contained within s1 and s2 parameters.
+    //kinematics are fully contained within s1 and s2 parameters (which also constrain s3). Reference to Byckling Particle Kinematics.
+    //first, place neutron along z-axis.
+    G4double neutronMomentum = std::sqrt(tri(s,m1*m1,s2)/s)/2.*keV;
+    G4ThreeVector neutronDirection(0, 0, 1);
+    G4ThreeVector neutronVectorMomentum = neutronMomentum*neutronDirection;
 
-    // Q value was calculated from atomic masses.
-    // Use it to get correct triton energy.
-    G4double cmMomentum = std::sqrt(transitionQ*(transitionQ + 2.*tritonMass)*
-                                    (transitionQ + 2.*nucleusMass)*
-                                    (transitionQ + 2.*tritonMass + 2.*nucleusMass) )/
-                          (transitionQ + tritonMass + nucleusMass)/2.;
+    //theta12 is given by kinematics. When neutron momentum is placed along z-axis, there is cylindrical symmetry and phi
+    //of triton can be chosen arbitrarily. Only relative angles matter at this point; reaction plane will be rotated
+    //randomly at later point.
+    G4double costheta12 = ( (s+m1*m1-s2)*(s+m2*m2-s3) + 2*s*(m1*m1 + m2*m2 - s1) )/std::sqrt(tri(s,m1*m1,s2)*tri(s,m2*m2,s3));
+    G4double tritonMomentum = std::sqrt(tri(s,m2*m2,s3)/s)/2.*keV;
+    G4ThreeVector tritonDirection(std::sin(std::acos(costheta12)), 0, costheta12);
+    G4ThreeVector tritonVectorMomentum = tritonMomentum*tritonDirection;
 
-    // Set up final state
-    // parentParticle is set at rest here because boost with correct momentum
-    // is done later
+    //by conservation of momentum, the momentum of the alpha particle is now decided:
+    G4ThreeVector alphaVectorMomentum = - neutronVectorMomentum - tritonVectorMomentum;
+
+    //now, rotate the three vectors by random rotation to ensure isotropic radiation.
+    //phi must be chosen randomly between 0 and 2pi. sin(theta) must be chosen between 0 and pi for isotropic distb.
+    //ThreeVector's rotate function is given wrt angle and rotation normal vector. Find these through https://en.wikipedia.org/wiki/Rotation_matrix
+    G4double alpha = std::asin(2.*G4UniformRand()-1.0);
+    G4double beta = twopi*G4UniformRand()*rad;
+    G4double gamma = twopi*G4UniformRand()*rad;
+
+    G4ThreeVector rotationVector(std::sin(alpha)*std::cos(beta) - std::cos(alpha)*std::sin(beta)*std::sin(gamma)+
+        std::sin(alpha)*std::cos(gamma),
+        std::cos(alpha)*std::sin(beta)*std::cos(gamma)+std::sin(alpha)*std::sin(gamma)+std::sin(beta),
+        std::cos(beta)*std::sin(gamma)-std::sin(alpha)*std::sin(beta)*std::sin(gamma)+std::cos(alpha)*std::sin(gamma));
+
+    G4double rotationAngle = std::acos( (std::cos(beta)*std::cos(gamma)+std::sin(alpha)*std::sin(beta)*std::sin(gamma)
+            + std::cos(alpha)*std::cos(gamma)+std::cos(alpha)*cos(beta)-1.)/2. );
+
+    //rotate all vectors.
+    neutronVectorMomentum.rotate(rotationAngle,rotationVector);
+    tritonVectorMomentum.rotate(rotationAngle,rotationVector);
+    alphaVectorMomentum.rotate(rotationAngle,rotationVector);
+
     G4DynamicParticle parentParticle(G4MT_parent, G4ThreeVector(0,0,0), 0.0);
     G4DecayProducts* products = new G4DecayProducts(parentParticle);
 
-    G4double costheta = 2.*G4UniformRand()-1.0;
-    G4double sintheta = std::sqrt(1.0 - costheta*costheta);
-    G4double phi  = twopi*G4UniformRand()*rad;
-    G4ThreeVector direction(sintheta*std::cos(phi),sintheta*std::sin(phi),
-                            costheta);
+    G4DynamicParticle* dynamicNeutron
+            = new G4DynamicParticle(G4MT_daughters[0], neutronVectorMomentum);
+    products->PushProducts(dynamicNeutron);
 
-    G4double KE = std::sqrt(cmMomentum*cmMomentum + tritonMass*tritonMass)
-                  - tritonMass;
-    G4DynamicParticle* daughterparticle =
-            new G4DynamicParticle(G4MT_daughters[1], direction, KE, tritonMass);
-    products->PushProducts(daughterparticle);
+    G4DynamicParticle* dynamicTriton
+            = new G4DynamicParticle(G4MT_daughters[1], tritonVectorMomentum);
+    products->PushProducts(dynamicTriton);
 
-    KE = std::sqrt(cmMomentum*cmMomentum + nucleusMass*nucleusMass) - nucleusMass;
-    daughterparticle =
-            new G4DynamicParticle(G4MT_daughters[0], -1.0*direction, KE, nucleusMass);
-    products->PushProducts(daughterparticle);
+    G4DynamicParticle* dynamicAlpha
+            = new G4DynamicParticle(G4MT_daughters[2], alphaVectorMomentum);
+    products->PushProducts(dynamicAlpha);
 
     return products;
 }

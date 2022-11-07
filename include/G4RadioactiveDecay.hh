@@ -52,6 +52,7 @@
 #include "G4ThreeVector.hh"
 #include "G4Threading.hh"
 #include "G4RadioactiveDecayMode.hh"
+#include "G4DalitzHandler.hh"
 
 class G4Fragment;
 class G4RadioactiveDecayMessenger;
@@ -190,6 +191,8 @@ class G4RadioactiveDecay : public G4VRestDiscreteProcess
 
     // Library of decay tables
     DecayTableMap* dkmap;
+
+    std::map<G4String, G4DalitzHandler*> dalitzmap;
 #ifdef G4MULTITHREADED
     static DecayTableMap* master_dkmap;
 #endif

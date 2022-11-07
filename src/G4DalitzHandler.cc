@@ -12,6 +12,10 @@ G4DalitzHandler::G4DalitzHandler(const G4int daughterZ, const G4int daughterA, c
 
 G4DalitzHandler::~G4DalitzHandler()
 {
+    s1s.clear();
+    s2s.clear();
+    dalitzConfs.clear();
+    dalitzProbs.clear();
 }
 
 G4bool G4DalitzHandler::ReadDalitzFile(G4int daughterZ, G4int daughterA, G4double nominalParentEx){
@@ -32,9 +36,9 @@ G4bool G4DalitzHandler::ReadDalitzFile(G4int daughterZ, G4int daughterA, G4doubl
         radDirPath = path_var;   // convert to string
     }
     std::ostringstream os;
-    os << radDirPath << "/DalitzPlots/z" << daughterZ << "DALITZ.a" << daughterA << '\0';
+    os << radDirPath << "/DalitzFiles/z" << daughterZ << "DALITZ.a" << daughterA << '\0';
 
-    char inputChars[20000]={' '};
+    char inputChars[25000]={' '};
     G4String inputLine;
     G4bool found(false);
     G4String dump;
@@ -49,11 +53,14 @@ G4bool G4DalitzHandler::ReadDalitzFile(G4int daughterZ, G4int daughterA, G4doubl
     std::ifstream file;
     file.open(os.str());
     if (!file.is_open() ){
+        G4String error ="Did not find DalitzFile for A " + std::to_string(daughterA) + " Z " + std::to_string(daughterZ);
+        G4Exception("G4DalitzHandler()","HAD_RDM_200",FatalException,
+                    error);
         return false;
     }
     else {
         //read file to see if nominalParentEx is present:
-        while (!file.getline(inputChars, 20000).eof()) {
+        while (!file.getline(inputChars, 25000).eof()) {
             inputLine = inputChars;
             std::istringstream tmpStream(inputLine);
             if(inputChars[0] == 'N'){
@@ -62,20 +69,14 @@ G4bool G4DalitzHandler::ReadDalitzFile(G4int daughterZ, G4int daughterA, G4doubl
                     //else
                 else{
                     tmpStream >> dump >> nominalRead;
-                    if(abs(nominalRead-nominalParentEx) < 0.01){
+                    G4cout << (abs(nominalRead-nominalParentEx) < 0.01) << G4endl;
+                    G4cout << abs(nominalRead-nominalParentEx) << G4endl;
+                    if(abs(nominalRead/1000.-nominalParentEx) < 0.01){
                         //if the read nominallevel is less than 10eV from the read level, we consider it found.
                         found = true;
                         //the entries following the nominallevel are the s1 values.
-                        hasNext = true;
-                        while(hasNext){
-                            tmpStream >> s1;
-                            if(s1 == 0){
-                                hasNext = false;
-                                G4cout << "den nåede slutningen i ReadDalitzFile" << G4endl;
-                            }
-                            else{
-                                s1s.push_back(s1);
-                            }
+                        while(tmpStream >> s1) {
+                            s1s.push_back(s1);
                         }
                     }
                 }
@@ -88,10 +89,8 @@ G4bool G4DalitzHandler::ReadDalitzFile(G4int daughterZ, G4int daughterA, G4doubl
                     s2s.push_back(s2);
                     G4int s1no = 0;
                     G4int s2no = s2s.size();
-                    hasNext = true;
-                    while(hasNext){
+                    while(tmpStream >> prob){
                         //now the probabilites come
-                        tmpStream >> prob;
                         if(prob > 0){
                             probabilitySum += prob;
                             dalitzProbs.push_back(probabilitySum);
@@ -105,6 +104,10 @@ G4bool G4DalitzHandler::ReadDalitzFile(G4int daughterZ, G4int daughterA, G4doubl
         }
         //file has been read. If the nominalLevel wasnt found, return false. If it was found, it was the last level,
         //return true.
+
+        for(int i = 0; i < s1s.size(); i++){
+            G4cout << i << " " << s1s[i] << G4endl;
+        }
         return found;
     }
 }
@@ -137,5 +140,7 @@ std::vector<G4int> G4DalitzHandler::ChooseDalitzConfiguration(){
 std::vector<G4double> G4DalitzHandler::GetCorrectedS1S2(G4double sublevelMass){
     //for now, just return uncorrected S1s and S2s.
     std::vector<G4int> chosenIndeces = ChooseDalitzConfiguration();
+    G4cout << "indeces " << chosenIndeces[0] << " and " << chosenIndeces[1] << G4endl;
+    G4cout << "chose s1" << s1s[chosenIndeces[0]] << " s2 " << s2s[chosenIndeces[1]] << G4endl;
     return {s1s[chosenIndeces[0]],s2s[chosenIndeces[1]]};
 }

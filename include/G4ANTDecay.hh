@@ -36,11 +36,11 @@
 class G4ANTDecay : public G4NuclearDecay
 {
 public:
-    G4TritonDecay(const G4ParticleDefinition* theParentNucleus,
+    G4ANTDecay(const G4ParticleDefinition* theParentNucleus,
                   const G4double& theBR, const G4double& Qvalue,
                   const G4double& excitation, const G4Ions::G4FloatLevelBase& flb, G4DalitzHandler *newDalitzHandler);
 
-    virtual ~G4TritonDecay();
+    virtual ~G4ANTDecay();
 
     virtual G4DecayProducts* DecayIt(G4double);
 

@@ -13,7 +13,7 @@ public:
     G4DalitzHandler(const G4int daughterZ, const G4int daughterA, const G4double nomEx, const G4double nomMass);
     ~G4DalitzHandler();
 
-    G4double G4DalitzHandler::GetNomMass(){return nomMass};
+    G4double GetNomMass(){return nomMass;};
 
     std::vector<G4double> GetCorrectedS1S2(G4double sublevelMass);
 private:

@@ -74,6 +74,8 @@ std::istream &operator >> (std::istream& strm, G4RadioactiveDecayMode& q)
   {q = TritonWidth;}
   else if (a == "BetaMinusWidth")
   {q = BetaMinusWidth;}
+  else if (a == "ANT")
+  {q = ANT;}
   else
     {q = RDM_ERROR;}
   return strm;
