@@ -72,6 +72,9 @@ G4DecayProducts* G4ANTDecay::DecayIt(G4double)
     G4double M = G4MT_parent -> GetPDGMass() * 1000;
     G4double nomM = dalitzHandler -> GetNomMass() * 1000;
 
+    /*G4cout << std::setprecision(10) << std::fixed;
+    G4cout << m1 << G4endl;*/
+
     //for now, all Decays are treated like nominal decays. For this reason s3 is calculated from nominal mass.
     std::vector<G4double> s1s2 = dalitzHandler -> GetCorrectedS1S2(M);
     G4double s = nomM*nomM;
@@ -97,24 +100,43 @@ G4DecayProducts* G4ANTDecay::DecayIt(G4double)
     G4ThreeVector alphaVectorMomentum = - neutronVectorMomentum - tritonVectorMomentum;
 
     //now, rotate the three vectors by random rotation to ensure isotropic radiation.
-    //phi must be chosen randomly between 0 and 2pi. sin(theta) must be chosen between 0 and pi for isotropic distb.
-    //ThreeVector's rotate function is given wrt angle and rotation normal vector. Find these through https://en.wikipedia.org/wiki/Rotation_matrix
-    G4double alpha = std::asin(2.*G4UniformRand()-1.0);
-    G4double beta = twopi*G4UniformRand()*rad;
-    G4double gamma = twopi*G4UniformRand()*rad;
+    G4double rotz = twopi*G4UniformRand();
+    G4double rotx = std::acos(2.*G4UniformRand() - 1.0);
+    G4double rotzAgain = twopi*G4UniformRand();
 
-    G4ThreeVector rotationVector(std::sin(alpha)*std::cos(beta) - std::cos(alpha)*std::sin(beta)*std::sin(gamma)+
-        std::sin(alpha)*std::cos(gamma),
-        std::cos(alpha)*std::sin(beta)*std::cos(gamma)+std::sin(alpha)*std::sin(gamma)+std::sin(beta),
-        std::cos(beta)*std::sin(gamma)-std::sin(alpha)*std::sin(beta)*std::sin(gamma)+std::cos(alpha)*std::sin(gamma));
+    neutronVectorMomentum.rotate(rotz,G4ThreeVector(0,0,1));
+    tritonVectorMomentum.rotate(rotz,G4ThreeVector(0,0,1));
+    alphaVectorMomentum.rotate(rotz,G4ThreeVector(0,0,1));
 
-    G4double rotationAngle = std::acos( (std::cos(beta)*std::cos(gamma)+std::sin(alpha)*std::sin(beta)*std::sin(gamma)
-            + std::cos(alpha)*std::cos(gamma)+std::cos(alpha)*cos(beta)-1.)/2. );
+    //G4cout << "neutronPz is " << neutronVectorMomentum.z() << G4endl;
+
+    neutronVectorMomentum.rotate(rotx,G4ThreeVector(1,0,0));
+    tritonVectorMomentum.rotate(rotx,G4ThreeVector(1,0,0));
+    alphaVectorMomentum.rotate(rotx,G4ThreeVector(1,0,0));
+
+    /*G4cout << "rotating " << rotx << " rad about x-axis" << G4endl;
+    G4cout << "neutronPz is " << neutronVectorMomentum.z() << G4endl;
+    G4cout << "-----------------------------------------"<< G4endl;*/
+
+    neutronVectorMomentum.rotate(rotzAgain,G4ThreeVector(0,0,1));
+    tritonVectorMomentum.rotate(rotzAgain,G4ThreeVector(0,0,1));
+    alphaVectorMomentum.rotate(rotzAgain,G4ThreeVector(0,0,1));
+
+    /*G4double rotx = 2*G4UniformRand()-1;
+    G4double roty = 2*G4UniformRand()-1;
+    G4double rotz = 2*G4UniformRand()-1;
+    rotx *= 1/std::sqrt(rotx*rotx+roty*roty+rotz*rotz);
+    roty *= 1/std::sqrt(rotx*rotx+roty*roty+rotz*rotz);
+    rotz *= 1/std::sqrt(rotx*rotx+roty*roty+rotz*rotz);
+
+    G4ThreeVector rotationVector(rotx,roty,rotz);
+
+    G4double rotationAngle = pi*G4UniformRand();
 
     //rotate all vectors.
     neutronVectorMomentum.rotate(rotationAngle,rotationVector);
     tritonVectorMomentum.rotate(rotationAngle,rotationVector);
-    alphaVectorMomentum.rotate(rotationAngle,rotationVector);
+    alphaVectorMomentum.rotate(rotationAngle,rotationVector);*/
 
     G4DynamicParticle parentParticle(G4MT_parent, G4ThreeVector(0,0,0), 0.0);
     G4DecayProducts* products = new G4DecayProducts(parentParticle);
@@ -137,7 +159,7 @@ G4DecayProducts* G4ANTDecay::DecayIt(G4double)
 
 void G4ANTDecay::DumpNuclearInfo()
 {
-    G4cout << " G4TritonDecay for parent nucleus " << GetParentName() << G4endl;
+    G4cout << " G4ANTDecay for parent nucleus " << GetParentName() << G4endl;
     G4cout << " decays to " << GetDaughterName(0) << " + " << GetDaughterName(1) << " + " << GetDaughterName(2)
            << " with branching ratio " << GetBR() << "% and Q value "
            << transitionQ << G4endl;

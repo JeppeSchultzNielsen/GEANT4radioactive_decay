@@ -4,6 +4,7 @@
 
 #include "G4DalitzHandler.hh"
 #include "Randomize.hh"
+#include <fstream>
 
 G4DalitzHandler::G4DalitzHandler(const G4int daughterZ, const G4int daughterA, const G4double nomEx, const G4double nomMass){
     readSucces = ReadDalitzFile(daughterZ, daughterA, nomEx);
@@ -69,8 +70,6 @@ G4bool G4DalitzHandler::ReadDalitzFile(G4int daughterZ, G4int daughterA, G4doubl
                     //else
                 else{
                     tmpStream >> dump >> nominalRead;
-                    G4cout << (abs(nominalRead-nominalParentEx) < 0.01) << G4endl;
-                    G4cout << abs(nominalRead-nominalParentEx) << G4endl;
                     if(abs(nominalRead/1000.-nominalParentEx) < 0.01){
                         //if the read nominallevel is less than 10eV from the read level, we consider it found.
                         found = true;
@@ -104,10 +103,6 @@ G4bool G4DalitzHandler::ReadDalitzFile(G4int daughterZ, G4int daughterA, G4doubl
         }
         //file has been read. If the nominalLevel wasnt found, return false. If it was found, it was the last level,
         //return true.
-
-        for(int i = 0; i < s1s.size(); i++){
-            G4cout << i << " " << s1s[i] << G4endl;
-        }
         return found;
     }
 }
@@ -140,7 +135,22 @@ std::vector<G4int> G4DalitzHandler::ChooseDalitzConfiguration(){
 std::vector<G4double> G4DalitzHandler::GetCorrectedS1S2(G4double sublevelMass){
     //for now, just return uncorrected S1s and S2s.
     std::vector<G4int> chosenIndeces = ChooseDalitzConfiguration();
-    G4cout << "indeces " << chosenIndeces[0] << " and " << chosenIndeces[1] << G4endl;
-    G4cout << "chose s1" << s1s[chosenIndeces[0]] << " s2 " << s2s[chosenIndeces[1]] << G4endl;
+    /*G4String radDirPath = "";
+    char* path_var = std::getenv("G4RADIOACTIVEDATA");
+    if (!path_var) {
+        G4Exception("G4RadioactiveDecay()","HAD_RDM_200",FatalException,
+                    "Environment variable G4RADIOACTIVEDATA is not set");
+    } else {
+        radDirPath = path_var;   // convert to string
+    }
+
+    G4String path = radDirPath + "/DalitzFiles/check.txt";
+
+    std::ofstream outfile;
+
+    outfile.open(path, std::ios_base::app); // append instead of overwrite
+    outfile << s1s[chosenIndeces[0]] << "\t" << s2s[chosenIndeces[1]] << "\n";
+
+    outfile.close();*/
     return {s1s[chosenIndeces[0]],s2s[chosenIndeces[1]]};
 }
