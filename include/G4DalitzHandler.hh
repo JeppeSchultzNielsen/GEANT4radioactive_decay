@@ -15,7 +15,7 @@ public:
 
     G4double GetNomMass(){return nomMass;};
 
-    std::vector<G4double> GetCorrectedS1S2(G4double sublevelMass);
+    std::vector<G4double> GetCorrectedS1S2(G4double sublevelMass, G4double m1, G4double m2, G4double m3);
 private:
     //called in construction
     G4bool ReadDalitzFile(G4int daughterZ, G4int daughterA, G4double nominalParentEx);

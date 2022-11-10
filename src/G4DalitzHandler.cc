@@ -132,25 +132,160 @@ std::vector<G4int> G4DalitzHandler::ChooseDalitzConfiguration(){
     return dalitzConfs[BinarySearch(&dalitzProbs,probRoof,0,dalitzProbs.size()-1)];
 }
 
-std::vector<G4double> G4DalitzHandler::GetCorrectedS1S2(G4double sublevelMass){
-    //for now, just return uncorrected S1s and S2s.
+std::vector<G4double> G4DalitzHandler::GetCorrectedS1S2(G4double sublevelMass, G4double m1, G4double m2, G4double m3){
+
     std::vector<G4int> chosenIndeces = ChooseDalitzConfiguration();
-    /*G4String radDirPath = "";
-    char* path_var = std::getenv("G4RADIOACTIVEDATA");
-    if (!path_var) {
-        G4Exception("G4RadioactiveDecay()","HAD_RDM_200",FatalException,
-                    "Environment variable G4RADIOACTIVEDATA is not set");
-    } else {
-        radDirPath = path_var;   // convert to string
+    G4double s1i = s1s[chosenIndeces[0]];
+    G4double s2i = s2s[chosenIndeces[1]];
+    G4double si = nomMass*nomMass;
+    G4double s3i = si + m1*m1 + m2*m2 + m3*m3 - s1i - s2i;
+
+    G4double sf = sublevelMass*sublevelMass;
+    G4double ds = sf-si;
+
+    /*G4cout << "nomMass " << nomMass << G4endl;
+    G4cout << "subMass " << sublevelMass << G4endl;
+    G4cout << "ds " << ds << G4endl;
+    G4cout << "s1i " << s1i << G4endl;
+    G4cout << "s2i " << s2i << G4endl;*/
+
+    //since s = s1+s2+s3 - m1² - m2² - m3², sf = si+ds = ds+s1+s2+s3 - m1² - m2² - m3², preferred situation is that
+    //new s1, s2 and s3 are chosen such that ds is distributed in a weighted way. The hope is that this would correspond
+    //to rescaling the dalitz plot without changing it significantly. Need a more correct way to do this.
+
+    G4double s1f = s1i + ds*s1i/(s1i+s2i+s3i);
+    G4double s2f = s2i + ds*s2i/(s1i+s2i+s3i);
+    G4double s3f = s3i + ds*s3i/(s1i+s2i+s3i);
+
+    //check if they obey their lower bounds. We can only enter these situations if ds is negative.
+    if(ds < 0){
+        if(s1f < (m1+m2)*(m1+m2)){
+            if(s2f < (m2+m3)*(m2+m3)){
+                //both s1 and s2 crossed their lower bounds in the correction. Set them equal to their lower bounds and s3
+                //takes it all.
+                s1f = (m1+m2)*(m1+m2);
+                s2f = (m2+m3)*(m2+m3);
+                s3f = sf + m1*m1 + m2*m2 + m3*m3 - s1f - s2f;
+                //this must be an allowed configuration.
+                return {s1f,s2f};
+            }
+            if(s3f < (m1+m3)*(m1+m3)){
+                //both s1 and s3 crossed their lower bounds in the correction. Set them equal to their lower bounds and s2
+                //takes it all.
+                s1f = (m1+m2)*(m1+m2);
+                s3f = (m1+m3)*(m1+m3);
+                s2f = sf + m1*m1 + m2*m2 + m3*m3 - s1f - s3f;
+                //this must be an allowed configuration.
+                return {s1f,s2f};
+            }
+            //only s1f is below lower bound. Set it to lower bound and recalculate s2f and s3f.
+            s1f = (m1+m2)*(m1+m2);
+            //I've already used som of ds to correct s1
+            s2f = s2i + (ds-(s1f-s1i))*s2i/(s2i+s3i);
+            s3f = s3i + (ds-(s1f-s1i))*s3i/(s2i+s3i);
+            //check if upper bounds are now obeyed - maybe this is not neceasary?
+            if(s2f > std::pow((sublevelMass - m1),2)){
+                G4cout << "s1 was at lowerbound, checking s2s upper bound" << G4endl;
+                //set s2f to upper limit and recalculate s3f:
+                s2f = std::pow(sublevelMass - m1,2);
+                s3f = sf + m1*m1 + m2*m2 + m3*m3 - s1f - s2f;
+                return {s1f,s2f};
+            }
+            if(s3f > std::pow(sublevelMass - m2,2)){
+                //set s3f to upper limit and recalculate s2f:
+                s3f = std::pow(sublevelMass - m2,2);
+                s2f = sf + m1*m1 + m2*m2 + m3*m3 - s1f - s3f;
+                return {s1f,s2f};
+            }
+            //all limits are upheld
+            return {s1f,s2f};
+        }
+        if(s2f < (m3+m2)*(m3+m2)){
+            if(s3f < (m1+m3)*(m1+m3)){
+                //both s2 and s3 crossed their lower bounds in the correction. Set them equal to their lower bounds and s1
+                //takes it all.
+                s2f = (m3+m2)*(m3+m2);
+                s3f = (m1+m3)*(m1+m3);
+                s1f = sf + m1*m1 + m2*m2 + m3*m3 - s2f - s3f;
+                //this must be an allowed configuration.
+                return {s1f,s2f};
+            }
+            //only s2f is below lower bound. Set it to lower bound and recalculate s1f and s3f.
+            s2f = (m3+m2)*(m3+m2);
+            //I've already used som of ds to correct s2
+            s1f = s1i + (ds-(s2f-s2i))*s1i/(s1i+s3i);
+            s3f = s3i + (ds-(s2f-s2i))*s3i/(s1i+s3i);
+            //check if upper bounds are now obeyed
+            if(s1f > std::pow(sublevelMass - m3,2)){
+                //set s1f to upper limit and recalculate s3f:
+                s1f = std::pow(sublevelMass - m3,2);
+                s3f = sf + m1*m1 + m2*m2 + m3*m3 - s1f - s2f;
+                return {s1f,s2f};
+            }
+            if(s3f > std::pow(sublevelMass - m2,2)){
+                //set s3f to upper limit and recalculate s1f:
+                s3f = std::pow(sublevelMass - m2,2);
+                s1f = sf + m1*m1 + m2*m2 + m3*m3 - s2f - s3f;
+                return {s1f,s2f};
+            }
+            //all limits are upheld
+            return {s1f,s2f};
+        }
+        if(s3f < (m3+m1)*(m3+m1)){
+            //only s2f is below lower bound. Set it to lower bound and recalculate s1f and s2f.
+            s3f = (m3+m1)*(m3+m1);
+            //I've already used som of ds to correct s3
+            s1f = s1i + (ds-(s3f-s3i))*s1i/(s1i+s2i);
+            s2f = s2i + (ds-(s3f-s3i))*s2i/(s1i+s2i);
+            //check if upper bounds are now obeyed
+            if(s1f > std::pow(sublevelMass - m3,2)){
+                //set s1f to upper limit and recalculate s2f:
+                s1f = std::pow(sublevelMass - m3,2);
+                s2f = sf + m1*m1 + m2*m2 + m3*m3 - s3f - s1f;
+                return {s1f,s2f};
+            }
+            if(s2f > std::pow(sublevelMass - m1,2)){
+                //set s2f to upper limit and recalculate s1f:
+                s2f = std::pow(sublevelMass - m1,2);
+                s1f = sf + m1*m1 + m2*m2 + m3*m3 - s2f - s3f;
+                return {s1f,s2f};
+            }
+            //all limits are upheld
+            return {s1f,s2f};
+        }
+        return {s1f,s2f};
     }
 
-    G4String path = radDirPath + "/DalitzFiles/check.txt";
+    //case ds > 0. Do opposite of what i did before.
+    if(ds > 0){
+        if(s1f > std::pow(sublevelMass - m3,2)){
+            if(s2f > std::pow(sublevelMass - m1,2)){
+                s1f = std::pow(sublevelMass - m3,2);
+                s2f = std::pow(sublevelMass - m1,2);
+                return {s1f,s2f};
+            }
+            if(s3f > std::pow(sublevelMass - m2,2)){
+                s1f = std::pow(sublevelMass - m3,2);
+                s3f = std::pow(sublevelMass - m2,2);
+                s2f = s2f = sf + m1*m1 + m2*m2 + m3*m3 - s3f - s1f;
+                return {s1f,s2f};
+            }
+            //only s1f is above upper bound. Set it to upper bound and recalculate s2f and s3f.
+            s1f = (m1+m2)*(m1+m2);
+            //I've already used som of ds to correct s1
+            s2f = s2i + (ds-(s1f-s1i))*s2i/(s2i+s3i);
+            s3f = s3i + (ds-(s1f-s1i))*s3i/(s2i+s3i);
+            return {s1f, s2f}
+        }
+        if(s2f > std::pow(sublevelMass - m1,2)){
 
-    std::ofstream outfile;
+        }
+        if(s3f > std::pow(sublevelMass - m2,2)){
 
-    outfile.open(path, std::ios_base::app); // append instead of overwrite
-    outfile << s1s[chosenIndeces[0]] << "\t" << s2s[chosenIndeces[1]] << "\n";
+        }
+        //all limits are upheld
+        return {s1f,s2f};
+    }
 
-    outfile.close();*/
-    return {s1s[chosenIndeces[0]],s2s[chosenIndeces[1]]};
+    return {s1i,s2i};
 }

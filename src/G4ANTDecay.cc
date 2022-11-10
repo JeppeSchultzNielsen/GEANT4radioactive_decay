@@ -76,11 +76,13 @@ G4DecayProducts* G4ANTDecay::DecayIt(G4double)
     G4cout << m1 << G4endl;*/
 
     //for now, all Decays are treated like nominal decays. For this reason s3 is calculated from nominal mass.
-    std::vector<G4double> s1s2 = dalitzHandler -> GetCorrectedS1S2(M);
-    G4double s = nomM*nomM;
+    std::vector<G4double> s1s2 = dalitzHandler -> GetCorrectedS1S2(M/1000,m1/1000,m2/1000,m3/1000);
+    G4double s = M*M;
     G4double s1 = s1s2[0];
     G4double s2 = s1s2[1];
     G4double s3 = s+ m1*m1 + m2*m2 + m3*m3 - s1 - s2;
+    /*G4cout << "s1f " << s1 << G4endl;
+    G4cout << "s2f " << s2 << G4endl;*/
 
     //kinematics are fully contained within s1 and s2 parameters (which also constrain s3). Reference to Byckling Particle Kinematics.
     //first, place neutron along z-axis.
