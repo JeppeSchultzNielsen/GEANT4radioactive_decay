@@ -66,27 +66,29 @@ G4DecayProducts* G4ANTDecay::DecayIt(G4double)
     CheckAndFillDaughters();
 
     //naming convention stems from file in which DalitzPlot was defined; 1 is neutron, 2 is triton, 3 is alpha.
-    G4double m1 = G4MT_daughters[0]->GetPDGMass() * 1000;
-    G4double m2 = G4MT_daughters[1]->GetPDGMass() * 1000;
-    G4double m3 = G4MT_daughters[2]->GetPDGMass() * 1000;
-    G4double M = G4MT_parent -> GetPDGMass() * 1000;
-    G4double nomM = dalitzHandler -> GetNomMass() * 1000;
+    G4double m1 = G4MT_daughters[0]->GetPDGMass();
+    G4double m2 = G4MT_daughters[1]->GetPDGMass();
+    G4double m3 = G4MT_daughters[2]->GetPDGMass();
+    G4double M = G4MT_parent -> GetPDGMass();
+    G4double nomM = dalitzHandler -> GetNomMass();
 
     /*G4cout << std::setprecision(10) << std::fixed;
     G4cout << m1 << G4endl;*/
 
     //for now, all Decays are treated like nominal decays. For this reason s3 is calculated from nominal mass.
-    std::vector<G4double> s1s2 = dalitzHandler -> GetCorrectedS1S2(M/1000,m1/1000,m2/1000,m3/1000);
-    G4double s = M*M;
+    std::vector<G4double> s1s2 = dalitzHandler -> GetCorrectedS1S2(M,m1,m2,m3);
+    G4double s = nomM*nomM;
     G4double s1 = s1s2[0];
     G4double s2 = s1s2[1];
     G4double s3 = s+ m1*m1 + m2*m2 + m3*m3 - s1 - s2;
-    /*G4cout << "s1f " << s1 << G4endl;
-    G4cout << "s2f " << s2 << G4endl;*/
+    /*G4cout << "sf " << s << G4endl;
+    G4cout << "s1f " << s1 << G4endl;
+    G4cout << "s2f " << s2 << G4endl;
+    G4cout << "s3f " << s3 << G4endl;*/
 
     //kinematics are fully contained within s1 and s2 parameters (which also constrain s3). Reference to Byckling Particle Kinematics.
     //first, place neutron along z-axis.
-    G4double neutronMomentum = std::sqrt(tri(s,m1*m1,s2)/s)/2.*keV;
+    G4double neutronMomentum = std::sqrt(tri(s,m1*m1,s2)/s)/2.*MeV;
     G4ThreeVector neutronDirection(0, 0, 1);
     G4ThreeVector neutronVectorMomentum = neutronMomentum*neutronDirection;
 
@@ -94,7 +96,7 @@ G4DecayProducts* G4ANTDecay::DecayIt(G4double)
     //of triton can be chosen arbitrarily. Only relative angles matter at this point; reaction plane will be rotated
     //randomly at later point.
     G4double costheta12 = ( (s+m1*m1-s2)*(s+m2*m2-s3) + 2*s*(m1*m1 + m2*m2 - s1) )/std::sqrt(tri(s,m1*m1,s2)*tri(s,m2*m2,s3));
-    G4double tritonMomentum = std::sqrt(tri(s,m2*m2,s3)/s)/2.*keV;
+    G4double tritonMomentum = std::sqrt(tri(s,m2*m2,s3)/s)/2.*MeV;
     G4ThreeVector tritonDirection(std::sin(std::acos(costheta12)), 0, costheta12);
     G4ThreeVector tritonVectorMomentum = tritonMomentum*tritonDirection;
 
