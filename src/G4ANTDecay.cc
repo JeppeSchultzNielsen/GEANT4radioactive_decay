@@ -65,6 +65,7 @@ G4DecayProducts* G4ANTDecay::DecayIt(G4double)
     // Fill G4MT_daughters with triton and residual nucleus (stored by SetDaughter)
     CheckAndFillDaughters();
 
+    //G4cout << "calling" << G4endl;
     //naming convention stems from file in which DalitzPlot was defined; 1 is neutron, 2 is triton, 3 is alpha.
     G4double m1 = G4MT_daughters[0]->GetPDGMass();
     G4double m2 = G4MT_daughters[1]->GetPDGMass();
@@ -77,14 +78,10 @@ G4DecayProducts* G4ANTDecay::DecayIt(G4double)
 
     //for now, all Decays are treated like nominal decays. For this reason s3 is calculated from nominal mass.
     std::vector<G4double> s1s2 = dalitzHandler -> GetCorrectedS1S2(M,m1,m2,m3);
-    G4double s = nomM*nomM;
+    G4double s = M*M;
     G4double s1 = s1s2[0];
     G4double s2 = s1s2[1];
     G4double s3 = s+ m1*m1 + m2*m2 + m3*m3 - s1 - s2;
-    /*G4cout << "sf " << s << G4endl;
-    G4cout << "s1f " << s1 << G4endl;
-    G4cout << "s2f " << s2 << G4endl;
-    G4cout << "s3f " << s3 << G4endl;*/
 
     //kinematics are fully contained within s1 and s2 parameters (which also constrain s3). Reference to Byckling Particle Kinematics.
     //first, place neutron along z-axis.
@@ -112,35 +109,13 @@ G4DecayProducts* G4ANTDecay::DecayIt(G4double)
     tritonVectorMomentum.rotate(rotz,G4ThreeVector(0,0,1));
     alphaVectorMomentum.rotate(rotz,G4ThreeVector(0,0,1));
 
-    //G4cout << "neutronPz is " << neutronVectorMomentum.z() << G4endl;
-
     neutronVectorMomentum.rotate(rotx,G4ThreeVector(1,0,0));
     tritonVectorMomentum.rotate(rotx,G4ThreeVector(1,0,0));
     alphaVectorMomentum.rotate(rotx,G4ThreeVector(1,0,0));
 
-    /*G4cout << "rotating " << rotx << " rad about x-axis" << G4endl;
-    G4cout << "neutronPz is " << neutronVectorMomentum.z() << G4endl;
-    G4cout << "-----------------------------------------"<< G4endl;*/
-
     neutronVectorMomentum.rotate(rotzAgain,G4ThreeVector(0,0,1));
     tritonVectorMomentum.rotate(rotzAgain,G4ThreeVector(0,0,1));
     alphaVectorMomentum.rotate(rotzAgain,G4ThreeVector(0,0,1));
-
-    /*G4double rotx = 2*G4UniformRand()-1;
-    G4double roty = 2*G4UniformRand()-1;
-    G4double rotz = 2*G4UniformRand()-1;
-    rotx *= 1/std::sqrt(rotx*rotx+roty*roty+rotz*rotz);
-    roty *= 1/std::sqrt(rotx*rotx+roty*roty+rotz*rotz);
-    rotz *= 1/std::sqrt(rotx*rotx+roty*roty+rotz*rotz);
-
-    G4ThreeVector rotationVector(rotx,roty,rotz);
-
-    G4double rotationAngle = pi*G4UniformRand();
-
-    //rotate all vectors.
-    neutronVectorMomentum.rotate(rotationAngle,rotationVector);
-    tritonVectorMomentum.rotate(rotationAngle,rotationVector);
-    alphaVectorMomentum.rotate(rotationAngle,rotationVector);*/
 
     G4DynamicParticle parentParticle(G4MT_parent, G4ThreeVector(0,0,0), 0.0);
     G4DecayProducts* products = new G4DecayProducts(parentParticle);
@@ -156,6 +131,8 @@ G4DecayProducts* G4ANTDecay::DecayIt(G4double)
     G4DynamicParticle* dynamicAlpha
             = new G4DynamicParticle(G4MT_daughters[2], alphaVectorMomentum);
     products->PushProducts(dynamicAlpha);
+
+    //G4cout << "Total ekin" << dynamicNeutron -> GetKne
 
     return products;
 }

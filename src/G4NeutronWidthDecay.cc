@@ -71,6 +71,7 @@ G4NeutronWidthDecay::~G4NeutronWidthDecay()
 
 G4DecayProducts* G4NeutronWidthDecay::DecayIt(G4double)
 {
+
     G4DecayProducts* products;
     if(widthReadSucces){
         int chosenLevel = ChooseDecaySublevel();

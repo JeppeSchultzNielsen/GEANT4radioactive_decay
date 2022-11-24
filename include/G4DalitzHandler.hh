@@ -18,9 +18,11 @@ public:
     std::vector<G4double> GetCorrectedS1S2(G4double sublevelMass, G4double m1, G4double m2, G4double m3);
 
     //helper function: triangle function. Used in 3-body decays.
-    G4double tri(G4double a, G4double b, G4double c){return (a-b-c)*(a-b-c)-4.*b*c;}
+    G4double tri(G4double a, G4double b, G4double c){
+        return (a-b-c)*(a-b-c)-4.*b*c;}
 
-    G4double upperBound(G4double s, G4double s1, G4double s2, G4double m1, G4double m2, G4double m3);
+    G4double UpperBoundS1(G4double s, G4double s1, G4double s2, G4double m1, G4double m2, G4double m3);
+    G4double LowerBoundS1(G4double s, G4double s1, G4double s2, G4double m1, G4double m2, G4double m3);
 private:
     //called in construction
     G4bool ReadDalitzFile(G4int daughterZ, G4int daughterA, G4double nominalParentEx);

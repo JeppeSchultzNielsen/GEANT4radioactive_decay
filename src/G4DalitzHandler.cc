@@ -25,7 +25,7 @@ G4bool G4DalitzHandler::ReadDalitzFile(G4int daughterZ, G4int daughterA, G4doubl
     s2s = {};
     dalitzConfs = {};
     dalitzProbs = {};
-    probabilitySum = 0;
+    probabilitySum = 0.;
     //first check if the daughterNominalEx exists in the decayfile. I don't know how G4 does this, but i can find the
     //correct directory by doing this:
     G4String radDirPath = "";
@@ -48,7 +48,7 @@ G4bool G4DalitzHandler::ReadDalitzFile(G4int daughterZ, G4int daughterA, G4doubl
     G4double s2;
     G4double prob;
     std::vector<G4int> currentConf;
-
+    G4cout << std::setprecision (std::numeric_limits<double>::digits10 + 1);
     G4bool hasNext = true;
 
     std::ifstream file;
@@ -92,6 +92,10 @@ G4bool G4DalitzHandler::ReadDalitzFile(G4int daughterZ, G4int daughterA, G4doubl
                         //now the probabilites come
                         if(prob > 0){
                             probabilitySum += prob;
+                            /*if(prob > 1){
+                                G4cout << prob << G4endl;
+                                G4cout << probabilitySum << G4endl;
+                            }*/
                             dalitzProbs.push_back(probabilitySum);
                             currentConf = {s1no,s2no};
                             dalitzConfs.push_back(currentConf);
@@ -101,6 +105,10 @@ G4bool G4DalitzHandler::ReadDalitzFile(G4int daughterZ, G4int daughterA, G4doubl
                 }
             }
         }
+        G4cout << std::setprecision (std::numeric_limits<double>::digits10 + 1);
+        /*for(int i = 0; i < dalitzProbs.size(); i++){
+            G4cout << dalitzProbs[i]+0.1 << G4endl;
+        }*/
         //file has been read. If the nominalLevel wasnt found, return false. If it was found, it was the last level,
         //return true.
         return found;
@@ -116,7 +124,7 @@ G4int G4DalitzHandler::BinarySearch(std::vector<G4double> *cumProbs, G4double x,
             else{return -1;}
         }
         if(low == high){ //in case we reached top
-            if(x > cumProbs->at(high) && x <= cumProbs->at(high)+1) return mid;
+            if(x > cumProbs->at(high) && x <= cumProbs->at(high+1)) return mid;
             else{return -1;}
         }
         if(x > cumProbs->at(mid)){
@@ -128,8 +136,9 @@ G4int G4DalitzHandler::BinarySearch(std::vector<G4double> *cumProbs, G4double x,
 }
 
 std::vector<G4int> G4DalitzHandler::ChooseDalitzConfiguration(){
-    G4double probRoof  = probabilitySum * G4UniformRand();
-    return dalitzConfs[BinarySearch(&dalitzProbs,probRoof,0,dalitzProbs.size()-1)];
+    G4double probRoof  = probabilitySum *1.* G4UniformRand();
+    G4int chosenIndex = BinarySearch(&dalitzProbs,probRoof,0,dalitzProbs.size()-1);
+    return dalitzConfs[chosenIndex];
 }
 
 std::vector<G4double> G4DalitzHandler::GetCorrectedS1S2(G4double sublevelMass, G4double m1, G4double m2, G4double m3){
@@ -140,202 +149,132 @@ std::vector<G4double> G4DalitzHandler::GetCorrectedS1S2(G4double sublevelMass, G
     G4double si = nomMass*nomMass;
     G4double s3i = si + m1*m1 + m2*m2 + m3*m3 - s1i - s2i;
 
+    /*G4cout << s1i << G4endl;
+    G4cout << s2i << G4endl;*/
     G4double sf = sublevelMass*sublevelMass;
     G4double ds = sf-si;
 
-    /*G4cout << "nomMass " << nomMass << G4endl;
-    G4cout << "subMass " << sublevelMass << G4endl;
-    G4cout << "m1 " << m1 << G4endl;
-    G4cout << "m2 " << m2 << G4endl;
-    G4cout << "m3 " << m3 << G4endl;
-    G4cout << "ds " << ds << G4endl;
-    G4cout << "si " << si << G4endl;
-    G4cout << "s1i " << s1i << G4endl;
-    G4cout << "s2i " << s2i << G4endl;
-    G4cout << "s3i " << s3i << G4endl;*/
+    //G4double s1f = s1i + ds*s1i/(si + m1*m1 + m2*m2 + m3*m3);
+    //G4double s2f = s2i + ds*s2i/(si + m1*m1 + m2*m2 + m3*m3);
 
-    //since s = s1+s2+s3 - m1² - m2² - m3², sf = si+ds = ds+s1+s2+s3 - m1² - m2² - m3², preferred situation is that
-    //new s1, s2 and s3 are chosen such that ds is distributed in a weighted way. The hope is that this would correspond
-    //to rescaling the dalitz plot without changing it significantly. Need a more correct way to do this.
+    G4double s1weight = s1i*G4UniformRand();
+    G4double s2weight = s2i*G4UniformRand();
+    G4double s3weight = s3i*G4UniformRand();
 
-    G4double s1f = s1i + ds*s1i/(s1i+s2i+s3i);
-    G4double s2f = s2i + ds*s2i/(s1i+s2i+s3i);
-    G4double s3f = s3i + ds*s3i/(s1i+s2i+s3i);
-    
+    s1weight *= 1/(s1weight + s2weight + s3weight);
+    s2weight *= 1/(s1weight + s2weight + s3weight);
+    s3weight *= 1/(s1weight + s2weight + s3weight);
 
-    //check if they obey their lower bounds. We can only enter these situations if ds is negative.
-    /*if(ds < 0){
-        if(s1f < (m1+m2)*(m1+m2)){
-            if(s2f < (m2+m3)*(m2+m3)){
-                //both s1 and s2 crossed their lower bounds in the correction. Set them equal to their lower bounds and s3
-                //takes it all.
-                s1f = (m1+m2)*(m1+m2);
-                s2f = (m2+m3)*(m2+m3);
-                s3f = sf + m1*m1 + m2*m2 + m3*m3 - s1f - s2f;
-                //this must be an allowed configuration.
-                return {s1f,s2f};
+    G4double s1f = s1i + ds * s1weight;
+    G4double s2f = s2i + ds * s2weight;
+    G4double s3f = sf + m1*m1 + m2*m2 + m3*m3 - s1f - s2f;
+
+    G4double upBs1 = UpperBoundS1(sf,s1f,s2f,m1,m2,m3);
+    G4double lowBs1 = LowerBoundS1(sf,s1f,s2f,m1,m2,m3);
+    G4double upBs3 = std::pow((std::sqrt(sf)-m2),2);
+    G4double lowBs3 = (m1+m3)*(m1+m3);
+    G4double lowBs2 = (m2+m3)*(m2+m3);
+    G4double upBs2 = (std::sqrt(sf)-m1)*(std::sqrt(sf)-m1);
+
+
+    int i = 0;
+    //try new random numbers until we find some that work.
+    while(s1f > upBs1 || s1f < lowBs1 || s3f > upBs3 || s3f < lowBs3 || std::isnan(upBs1) || std::isnan(lowBs1)){
+        s1weight = s1i*G4UniformRand();
+        s2weight = s2i*G4UniformRand();
+        s3weight = s3i*G4UniformRand();
+        s1weight *= 1/(s1weight + s2weight + s3weight);
+        s2weight *= 1/(s1weight + s2weight + s3weight);
+        s3weight *= 1/(s1weight + s2weight + s3weight);
+        s1f = s1i + ds * s1weight;
+        s2f = s2i + ds * s2weight;
+        s3f = sf + m1*m1 + m2*m2 + m3*m3 - s1f - s2f;
+
+        upBs1 = UpperBoundS1(sf,s1f,s2f,m1,m2,m3);
+        lowBs1 = LowerBoundS1(sf,s1f,s2f,m1,m2,m3);
+        i++;
+        if(i > 20){
+            //at edges of Dalitz plot, s1 and s2 can be at their minimum values (can happen for any pair of invariant
+            //masses). At this point, the algorithm for choosing new values will not progress, because two of the weights
+            //would have to be zero. If the algorithm doesnt progress, we should therefore choose the most recent value
+            //and force it to be legal.
+            //or really just pull a new value
+            chosenIndeces = ChooseDalitzConfiguration();
+            s1i = s1s[chosenIndeces[0]]/1000000; //change units from keV to MeV
+            s2i = s2s[chosenIndeces[1]]/1000000; //change units from keV to MeV
+            G4cout << i << G4endl;
+            i = 0;
+            /*
+            if(s2f < lowBs2){
+                G4double ds = ds - (s2f - lowBs2);
+                s2f = lowBs2;
+                //as default, share remaining ds among s1 and s3 in weighted manner.
+                s1f = s1i + ds * s1i /(s1i+s3i);
+                s3f = s3i + ds * s3i /(s1i+s3i);
+                upBs1 = UpperBoundS1(sf,s1f,s2f,m1,m2,m3);
+                lowBs1 = LowerBoundS1(sf,s1f,s2f,m1,m2,m3);
+                if(s1f < lowBs1){
+                    s1f = lowBs1;
+                    s3f = sf + m1*m1 + m2*m2 + m3*m3 - s1f - s2f;
+                }
+                if(s1f > upBs1){
+                    s1f = upBs1;
+                    s3f = sf + m1*m1 + m2*m2 + m3*m3 - s1f - s2f;
+                }
+                if(s3f < lowBs3){
+                    s3f = lowBs3;
+                    s1f = sf + m1*m1 + m2*m2 + m3*m3 - s3f - s2f;
+                }
+                if(s3f > upBs3){
+                    s3f = upBs3;
+                    s1f = sf + m1*m1 + m2*m2 + m3*m3 - s3f - s2f;
+                }
             }
-            if(s3f < (m1+m3)*(m1+m3)){
-                //both s1 and s3 crossed their lower bounds in the correction. Set them equal to their lower bounds and s2
-                //takes it all.
-                s1f = (m1+m2)*(m1+m2);
-                s3f = (m1+m3)*(m1+m3);
-                s2f = sf + m1*m1 + m2*m2 + m3*m3 - s1f - s3f;
-                //this must be an allowed configuration.
-                return {s1f,s2f};
+            if(s2f > upBs2){
+                G4double ds = ds - (s2f - lowBs2);
+                s2f = upBs2;
+                //as default, share remaining ds among s1 and s3 in weighted manner.
+                s1f = s1i + ds * s1i /(s1i+s3i);
+                s3f = s3i + ds * s3i /(s1i+s3i);
+                upBs1 = UpperBoundS1(sf,s1f,s2f,m1,m2,m3);
+                lowBs1 = LowerBoundS1(sf,s1f,s2f,m1,m2,m3);
+                if(s1f < lowBs1){
+                    s1f = lowBs1;
+                    s3f = sf + m1*m1 + m2*m2 + m3*m3 - s1f - s2f;
+                }
+                if(s1f > upBs1){
+                    s1f = upBs1;
+                    s3f = sf + m1*m1 + m2*m2 + m3*m3 - s1f - s2f;
+                }
+                if(s3f < lowBs3){
+                    s3f = lowBs3;
+                    s1f = sf + m1*m1 + m2*m2 + m3*m3 - s3f - s2f;
+                }
+                if(s3f > upBs3){
+                    s3f = upBs3;
+                    s1f = sf + m1*m1 + m2*m2 + m3*m3 - s3f - s2f;
+                }
             }
-            //only s1f is below lower bound. Set it to lower bound and recalculate s2f and s3f.
-            s1f = (m1+m2)*(m1+m2);
-            //I've already used som of ds to correct s1
-            s2f = s2i + (ds-(s1f-s1i))*s2i/(s2i+s3i);
-            s3f = s3i + (ds-(s1f-s1i))*s3i/(s2i+s3i);
-            //check if lower bounds are still obeyed now that i subtract even more.
-            if(s2f < (m2+m3)*(m2+m3)){
-                s1f = (m1+m2)*(m1+m2);
-                s2f = (m2+m3)*(m2+m3);
-                return {s1f,s2f};
-            }
-            if(s3f < (m1+m3)*(m1+m3)){
-                s1f = (m1+m2)*(m1+m2);
-                s3f = (m1+m3)*(m1+m3);
-                s2f = sf + m1*m1 + m2*m2 + m3*m3 - s1f - s3f;
-                return {s1f,s2f};
-            }
-            //lower bounds were still obeyed
-            return {s1f,s2f};
+            else{
+                //s2f is legal. now choose s1f so that its also legal.
+                if(s1f < lowBs1){
+                    s1f = lowBs1;
+                    s3f = sf + m1*m1 + m2*m2 + m3*m3 - s1f - s2f;
+                }
+                if(s1f > upBs1){
+                    s1f = upBs1;
+                    s3f = sf + m1*m1 + m2*m2 + m3*m3 - s1f - s2f;
+                }
+            }*/
         }
-        if(s2f < (m3+m2)*(m3+m2)){
-            if(s3f < (m1+m3)*(m1+m3)){
-                //both s2 and s3 crossed their lower bounds in the correction. Set them equal to their lower bounds and s1
-                //takes it all.
-                s2f = (m3+m2)*(m3+m2);
-                s3f = (m1+m3)*(m1+m3);
-                s1f = sf + m1*m1 + m2*m2 + m3*m3 - s2f - s3f;
-                //this must be an allowed configuration.
-                return {s1f,s2f};
-            }
-            //only s2f is below lower bound. Set it to lower bound and recalculate s1f and s3f.
-            s2f = (m3+m2)*(m3+m2);
-            //I've already used som of ds to correct s2
-            s1f = s1i + (ds-(s2f-s2i))*s1i/(s1i+s3i);
-            s3f = s3i + (ds-(s2f-s2i))*s3i/(s1i+s3i);
-            //check if lower bounds are still obeyed now that i subtract even more.
-            if(s1f < (m1+m3)*(m1+m3)){
-                //both s2 and s3 crossed their lower bounds in the correction. Set them equal to their lower bounds and s1
-                //takes it all.
-                s2f = (m3+m2)*(m3+m2);
-                s1f = (m1+m2)*(m1+m2);
-                return {s1f,s2f};
-            }
-            if(s3f < (m1+m3)*(m1+m3)){
-                s2f = (m3+m2)*(m3+m2);
-                s3f = (m1+m3)*(m1+m3);
-                s1f = sf + m1*m1 + m2*m2 + m3*m3 - s2f - s3f;
-                return {s1f,s2f};
-            }
-            //all limits are upheld
-            return {s1f,s2f};
-        }
-        if(s3f < (m3+m1)*(m3+m1)){
-            //only s3f is below lower bound. Set it to lower bound and recalculate s1f and s2f.
-            s3f = (m3+m1)*(m3+m1);
-            //I've already used som of ds to correct s3
-            s1f = s1i + (ds-(s3f-s3i))*s1i/(s1i+s2i);
-            s2f = s2i + (ds-(s3f-s3i))*s2i/(s1i+s2i);
-            //check if lower bounds are still obeyed now that i subtract even more.
-            if(s1f < (m1+m2)*(m1+m2)){
-                s1f = (m1+m2)*(m1+m2);
-                s2f = sf + m1*m1 + m2*m2 + m3*m3 - s1f - s3f;
-                return {s1f,s2f};
-            }
-            if(s2f < (m2+m3)*(m2+m3)){
-                s2f = (m3+m2)*(m3+m2);
-                s1f = sf + m1*m1 + m2*m2 + m3*m3 - s2f - s3f;
-                return {s1f,s2f};
-            }
-            //all limits are upheld
-            return {s1f,s2f};
-        }
-        return {s1f,s2f};
     }
 
-    //case ds > 0. Do opposite of what i did before.
-    if(ds > 0){
-        if(s1f > std::pow(sublevelMass - m3,2)){
-            if(s2f > std::pow(sublevelMass - m1,2)){
-                s1f = std::pow(sublevelMass - m3,2);
-                s2f = std::pow(sublevelMass - m1,2);
-                return {s1f,s2f};
-            }
-            if(s3f > std::pow(sublevelMass - m2,2)){
-                s1f = std::pow(sublevelMass - m3,2);
-                s3f = std::pow(sublevelMass - m2,2);
-                s2f = sf + m1*m1 + m2*m2 + m3*m3 - s3f - s1f;
-                return {s1f,s2f};
-            }
-            //only s1f is above upper bound. Set it to upper bound and recalculate s2f and s3f.
-            s1f = std::pow(sublevelMass - m3,2);
-            //I've already used som of ds to correct s1
-            s2f = s2i + (ds-(s1f-s1i))*s2i/(s2i+s3i);
-            s3f = s3i + (ds-(s1f-s1i))*s3i/(s2i+s3i);
-            if(s2f > std::pow(sublevelMass - m1,2)){
-                s1f = std::pow(sublevelMass - m3,2);
-                s2f = std::pow(sublevelMass - m1,2);
-                return {s1f,s2f};
-            }
-            if(s3f > std::pow(sublevelMass - m2,2)){
-                s1f = std::pow(sublevelMass - m3,2);
-                s3f = std::pow(sublevelMass - m2,2);
-                s2f = sf + m1*m1 + m2*m2 + m3*m3 - s3f - s1f;
-                return {s1f,s2f};
-            }
-            //legal config
-            return {s1f, s2f};
-        }
-        if(s2f > std::pow(sublevelMass - m1,2)){
-            if(s3f > std::pow(sublevelMass - m2,2)){
-                s1f = std::pow(sublevelMass - m3,2);
-                s2f = std::pow(sublevelMass - m1,2);
-                s1f = sf + m1*m1 + m2*m2 + m3*m3 - s3f - s2f;
-                return {s1f,s2f};
-            }
-            //only s2f above upper bound
-            s2f = std::pow(sublevelMass - m1,2);
-            s1f = s1i + (ds-(s2f-s2i))*s1i/(s1i+s3i);
-            s3f = s3i + (ds-(s2f-s2i))*s3i/(s1i+s3i);
-            //check if s1f and s3f are still legal
-            if(s3f > std::pow(sublevelMass - m2,2)){
-                s3f = std::pow(sublevelMass - m2,2);
-                s2f = sf + m1*m1 + m2*m2 + m3*m3 - s3f - s1f;
-                return {s1f,s2f};
-            }
-            if(s1f > std::pow(sublevelMass - m3,2)){
-                s1f = std::pow(sublevelMass - m3,2);
-                s2f = sf + m1*m1 + m2*m2 + m3*m3 - s3f - s1f;
-                return {s1f,s2f};
-            }
-            //legal config
-            return{s1f,s2f};
-        }
-        if(s3f > std::pow(sublevelMass - m2,2)){
-            s3f = std::pow(sublevelMass - m2,2);
-            s1f = s1i + (ds-(s3f-s3i))*s1i/(s1i+s2i);
-            s2f = s2i + (ds-(s3f-s3i))*s2i/(s1i+s2i);
-            if(s1f > std::pow(sublevelMass - m3,2)){
-                s1f = std::pow(sublevelMass - m3,2);
-                return {s1f,s2f};
-            }
-            if(s2f > std::pow(sublevelMass - m1,2)){
-                s1f = std::pow(sublevelMass - m3,2);
-                s2f = std::pow(sublevelMass - m1,2);
-                return {s1f,s2f};
-            }
-            //legal config
-            return{s1f,s2f};
-        }
-        //all limits are upheld
-        return {s1f,s2f};
-    }*/
-
     return {s1f,s2f};
+}
+
+G4double G4DalitzHandler::UpperBoundS1(G4double s, G4double s1, G4double s2, G4double m1, G4double m2, G4double m3){
+    return m1*m1 + m2*m2 - 1/(2*s2)*((s2 - s + m1*m1)*(s2+m2*m2-m3*m3)-std::sqrt(tri(s2,s,m1*m1)*tri(s2,m2*m2,m3*m3)));
+};
+G4double G4DalitzHandler::LowerBoundS1(G4double s, G4double s1, G4double s2, G4double m1, G4double m2, G4double m3){
+    return m1*m1 + m2*m2 - 1/(2*s2)*((s2 - s + m1*m1)*(s2+m2*m2-m3*m3)+std::sqrt(tri(s2,s,m1*m1)*tri(s2,m2*m2,m3*m3)));
 }
